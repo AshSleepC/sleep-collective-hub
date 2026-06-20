@@ -124,7 +124,43 @@
                 </button>
             </header>
             
-            <div id="records-cards-container" class="records-cards-list">
+            <!-- Filters for Service Records -->
+            <div class="card mb-4" style="padding: 1rem;">
+                <div class="flex-between" style="gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem;">Sort by Date</label>
+                        <select id="records-filter-sort" onchange="app.renderRecordsTable()">
+                            <option value="recent">Most Recent First</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem;">Start Date</label>
+                        <input type="date" id="records-filter-start" onchange="app.renderRecordsTable()">
+                    </div>
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem;">End Date</label>
+                        <input type="date" id="records-filter-end" onchange="app.renderRecordsTable()">
+                    </div>
+                    <button class="btn btn-outline" onclick="document.getElementById('records-filter-start').value=''; document.getElementById('records-filter-end').value=''; document.getElementById('records-filter-sort').value='recent'; app.renderRecordsTable();" style="height: 38px;">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active / Uninvoiced Records Section -->
+            <div class="records-section-header">
+                <h3>Uninvoiced Records</h3>
+            </div>
+            <div id="records-cards-container" class="records-cards-list mb-4">
+                <!-- Filled by JS -->
+            </div>
+
+            <!-- Archived / Invoiced Records Section -->
+            <div class="records-section-header mt-4">
+                <h3>Archived / Invoiced Records</h3>
+            </div>
+            <div id="records-cards-container-archived" class="records-cards-list">
                 <!-- Filled by JS -->
             </div>
         </div>

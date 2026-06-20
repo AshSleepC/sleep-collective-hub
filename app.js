@@ -323,19 +323,46 @@ const app = {
 
     renderRecordsTable() {
         const container = document.getElementById('records-cards-container');
-        if (!container) return;
-        container.innerHTML = '';
+        const archivedContainer = document.getElementById('records-cards-container-archived');
+        if (!container || !archivedContainer) return;
         
-        if (this.records.length === 0) {
-            container.innerHTML = `<div class="card text-center text-muted" style="padding: 2rem;">No service records found. Click "Add Record" to log one.</div>`;
-            return;
+        container.innerHTML = '';
+        archivedContainer.innerHTML = '';
+
+        // Get filter and sort values
+        const sortVal = document.getElementById('records-filter-sort') ? document.getElementById('records-filter-sort').value : 'recent';
+        const startDateVal = document.getElementById('records-filter-start') ? document.getElementById('records-filter-start').value : '';
+        const endDateVal = document.getElementById('records-filter-end') ? document.getElementById('records-filter-end').value : '';
+
+        // Filter records
+        let filtered = [...this.records];
+        if (startDateVal) {
+            const start = new Date(startDateVal);
+            start.setHours(0, 0, 0, 0);
+            filtered = filtered.filter(r => new Date(r.date) >= start);
         }
+        if (endDateVal) {
+            const end = new Date(endDateVal);
+            end.setHours(23, 59, 59, 999);
+            filtered = filtered.filter(r => new Date(r.date) <= end);
+        }
+
+        // Sort records
+        if (sortVal === 'recent') {
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        } else {
+            filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
+        // Split into active and archived
+        const uninvoicedRecords = filtered.filter(r => !r.invoiced);
+        const invoicedRecords = filtered.filter(r => r.invoiced);
 
         const superRate = this.settings.superRate || 12;
 
-        this.records.forEach(r => {
+        // Render function helper
+        const renderCard = (r, targetElement) => {
             const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
-
             const statusBadge = r.invoiced ?  
                 `<span class="badge success">Invoiced</span>` : 
                 `<span class="badge warning">Pending</span>`;
@@ -344,7 +371,6 @@ const app = {
                 `<span>${this.formatCurrency(fin.effectivePrice)}</span> <span class="badge" style="background:#E0E7FF;color:#3730A3;font-size:0.7em;">${fin.discountCodeApplied}</span>` 
                 : this.formatCurrency(fin.basePrice);
 
-            // Handle default age display logic if childName exists but childAge is empty
             const ageDisp = r.childAge || (r.childName ? "4 months" : "");
             const childBadge = r.childName ? 
                 `<span class="record-card-child-badge"><i data-lucide="baby"></i> ${r.childName}${ageDisp ? ` (${ageDisp})` : ''}</span>` : '';
@@ -393,8 +419,23 @@ const app = {
                     </div>
                 </div>
             `;
-            container.appendChild(card);
-        });
+            targetElement.appendChild(card);
+        };
+
+        // Render Uninvoiced list
+        if (uninvoicedRecords.length === 0) {
+            container.innerHTML = `<div class="card text-center text-muted" style="padding: 2rem; background: transparent;">No uninvoiced records match your filters.</div>`;
+        } else {
+            uninvoicedRecords.forEach(r => renderCard(r, container));
+        }
+
+        // Render Archived list
+        if (invoicedRecords.length === 0) {
+            archivedContainer.innerHTML = `<div class="card text-center text-muted" style="padding: 2rem; background: transparent;">No archived/invoiced records match your filters.</div>`;
+        } else {
+            invoicedRecords.forEach(r => renderCard(r, archivedContainer));
+        }
+
         lucide.createIcons();
     },
 
