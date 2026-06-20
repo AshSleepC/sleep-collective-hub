@@ -124,26 +124,8 @@
                 </button>
             </header>
             
-            <div class="card table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Client</th>
-                            <th>Service</th>
-                            <th>Price</th>
-                            <th>Fee (%)</th>
-                            <th>Total (Net)</th>
-                            <th id="th-super-header">Super (12%)</th>
-                            <th>Pay</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="records-table-body">
-                        <!-- Filled by JS -->
-                    </tbody>
-                </table>
+            <div id="records-cards-container" class="records-cards-list">
+                <!-- Filled by JS -->
             </div>
         </div>
 
@@ -448,7 +430,7 @@
                     </div>
                     <div class="form-group">
                         <label>Child's Age</label>
-                        <input type="text" id="record-child-age" placeholder="e.g. 5">
+                        <input type="text" id="record-child-age" placeholder="e.g. 4 months">
                     </div>
                 </div>
                 <div class="form-group">

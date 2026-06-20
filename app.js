@@ -322,8 +322,17 @@ const app = {
     },
 
     renderRecordsTable() {
-        const tbody = document.getElementById('records-table-body');
-        tbody.innerHTML = '';
+        const container = document.getElementById('records-cards-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (this.records.length === 0) {
+            container.innerHTML = `<div class="card text-center text-muted" style="padding: 2rem;">No service records found. Click "Add Record" to log one.</div>`;
+            return;
+        }
+
+        const superRate = this.settings.superRate || 12;
+
         this.records.forEach(r => {
             const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
 
@@ -332,29 +341,59 @@ const app = {
                 `<span class="badge warning">Pending</span>`;
 
             const priceDisp = fin.discountCodeApplied ? 
-                `<span style="text-decoration:line-through; color:#9ca3af; font-size:0.85em;">${this.formatCurrency(fin.basePrice)}</span><br/>${this.formatCurrency(fin.effectivePrice)} <span class="badge" style="background:#E0E7FF;color:#3730A3;font-size:0.7em;">${fin.discountCodeApplied}</span>` 
+                `<span>${this.formatCurrency(fin.effectivePrice)}</span> <span class="badge" style="background:#E0E7FF;color:#3730A3;font-size:0.7em;">${fin.discountCodeApplied}</span>` 
                 : this.formatCurrency(fin.basePrice);
 
-            const childInfo = (r.childName || r.childAge) ? 
-                `<br/><span class="text-muted" style="font-size:0.85em;">Child: ${r.childName || '-'}${r.childAge ? ` (Age: ${r.childAge})` : ''}</span>` : '';
+            // Handle default age display logic if childName exists but childAge is empty
+            const ageDisp = r.childAge || (r.childName ? "4 months" : "");
+            const childBadge = r.childName ? 
+                `<span class="record-card-child-badge"><i data-lucide="baby"></i> ${r.childName}${ageDisp ? ` (${ageDisp})` : ''}</span>` : '';
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${this.formatDate(r.date)}</td>
-                <td>${r.client}${childInfo}</td>
-                <td>${this.getServiceName(r.serviceId)}</td>
-                <td>${priceDisp}</td>
-                <td>${r.feePct || (this.settings.feeRate || 30)}%</td>
-                <td>${this.formatCurrency(fin.effectivePrice)}</td>
-                <td>${this.formatCurrency(fin.superAmt)}</td>
-                <td><strong class="highlight-text-small">${this.formatCurrency(fin.netPay)}</strong></td>
-                <td>${statusBadge}</td>
-                <td>
-                    <button class="btn-icon" onclick="app.openRecordModal('${r.id}')"><i data-lucide="edit"></i></button>
-                    <button class="btn-icon text-danger" onclick="app.deleteRecord('${r.id}')"><i data-lucide="trash-2"></i></button>
-                </td>
+            const card = document.createElement('div');
+            card.className = 'record-card';
+            card.innerHTML = `
+                <div class="record-card-top">
+                    <div class="record-card-main-info">
+                        <div class="record-card-client-row">
+                            <span class="record-card-client-name">${r.client}</span>
+                            ${childBadge}
+                        </div>
+                        <div class="record-card-meta-row">
+                            <span><i data-lucide="calendar" style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;margin-right:4px;"></i>${this.formatDate(r.date)}</span>
+                            <span>•</span>
+                            <span class="record-card-service-tag">${this.getServiceName(r.serviceId)}</span>
+                        </div>
+                    </div>
+                    <div class="record-card-right">
+                        ${statusBadge}
+                        <button class="btn-icon" onclick="app.openRecordModal('${r.id}')" title="Edit"><i data-lucide="edit"></i></button>
+                        <button class="btn-icon text-danger" onclick="app.deleteRecord('${r.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </div>
+                <div class="record-card-bottom">
+                    <div class="record-stat-box">
+                        <span>Client Price</span>
+                        <strong>${priceDisp}</strong>
+                    </div>
+                    <div class="record-stat-box">
+                        <span>Service Fee</span>
+                        <strong>${r.feePct || (this.settings.feeRate || 30)}% (-${this.formatCurrency(fin.feeAmt)})</strong>
+                    </div>
+                    <div class="record-stat-box">
+                        <span>Agency Gross</span>
+                        <strong>${this.formatCurrency(fin.grossPay)}</strong>
+                    </div>
+                    <div class="record-stat-box">
+                        <span>Super (${superRate}%)</span>
+                        <strong>${this.formatCurrency(fin.superAmt)}</strong>
+                    </div>
+                    <div class="record-stat-box">
+                        <span>Take-Home Pay</span>
+                        <strong class="highlight-pay">${this.formatCurrency(fin.netPay)}</strong>
+                    </div>
+                </div>
             `;
-            tbody.appendChild(tr);
+            container.appendChild(card);
         });
         lucide.createIcons();
     },
