@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSC Invoicing</title>
+    <!-- Premium Fonts matching The Sleep Collective aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Local Database -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="logo.png" alt="TSC Logo" style="width: 40px; height: 40px; margin-right: 12px; border-radius: 8px;">
+            <h2 style="font-size: 1.1rem; line-height: 1.2; margin: 0;">TSC<br>Invoicing</h2>
+        </div>
+        <nav class="nav-menu">
+            <button class="nav-btn active" data-view="dashboard">
+                <i data-lucide="layout-dashboard"></i> Dashboard
+            </button>
+            <button class="nav-btn" data-view="records">
+                <i data-lucide="list-todo"></i> Service Records
+            </button>
+            <button class="nav-btn" data-view="invoices">
+                <i data-lucide="file-text"></i> Invoice Generator
+            </button>
+            <button class="nav-btn" data-view="history">
+                <i data-lucide="archive"></i> Invoice History
+            </button>
+            <button class="nav-btn" data-view="services">
+                <i data-lucide="tags"></i> Services & Prices
+            </button>
+            <button class="nav-btn" data-view="tax">
+                <i data-lucide="file-bar-chart-2"></i> Tax Summaries
+            </button>
+            <button class="nav-btn" data-view="settings">
+                <i data-lucide="settings"></i> Backup & Config
+            </button>
+        </nav>
+        
+        <div class="user-profile">
+            <p>Admin Dashboard</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- View Containers -->
+        <div id="view-dashboard" class="view active">
+            <header class="view-header">
+                <h1>Monthly Earnings Dashboard</h1>
+                <p>Overview of your revenue and unbilled records.</p>
+            </header>
+            
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Earnings (This Month)</p>
+                        <h3 id="dash-earnings-month">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Total Super (This Month)</p>
+                        <h3 id="dash-super-month">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>FY Earnings (YTD)</p>
+                        <h3 id="dash-earnings-fy">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-info">
+                        <p>Uninvoiced Records</p>
+                        <h3 id="dash-uninvoiced-count">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card table-container">
+                <div class="card-header">
+                    <h3>Recent Uninvoiced Work</h3>
+                    <button class="btn btn-outline" onclick="app.switchView('records')">View All</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Service</th>
+                            <th>Take Home Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dash-recent-records">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-records" class="view hidden">
+            <header class="view-header flex-between">
+                <div>
+                    <h1>Service Records</h1>
+                    <p>Log your services and client appointments here.</p>
+                </div>
+                <button class="btn btn-primary" onclick="app.openRecordModal()">
+                    <i data-lucide="plus"></i> Add Record
+                </button>
+            </header>
+            
+            <div class="card table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Service</th>
+                            <th>Price</th>
+                            <th>Fee (%)</th>
+                            <th>Total (Net)</th>
+                            <th>Super (12%)</th>
+                            <th>Pay</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-table-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-invoices" class="view hidden">
+            <header class="view-header">
+                <h1>Invoice Generator</h1>
+                <p>Filter your uninvoiced records, select them, and generate a PDF.</p>
+            </header>
+
+            <div class="invoice-layout" style="display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; align-items: start;">
+                <!-- Main Data Area -->
+                <div class="invoice-main">
+                    <div class="card mb-4" style="padding: 1rem;">
+                        <h4 style="margin-bottom: 0.5rem;">Filters</h4>
+                        <div class="flex-between" style="gap: 1rem; align-items: flex-end;">
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label style="font-size: 0.8rem;">Start Date</label>
+                                <input type="date" id="inv-filter-start" onchange="app.renderInvoiceRecordsList()">
+                            </div>
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label style="font-size: 0.8rem;">End Date</label>
+                                <input type="date" id="inv-filter-end" onchange="app.renderInvoiceRecordsList()">
+                            </div>
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label style="font-size: 0.8rem;">Filter by Service</label>
+                                <select id="inv-filter-service" onchange="app.renderInvoiceRecordsList()">
+                                    <option value="">All Services</option>
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                            <button class="btn btn-outline" onclick="document.getElementById('inv-filter-start').value=''; document.getElementById('inv-filter-end').value=''; document.getElementById('inv-filter-service').value=''; app.renderInvoiceRecordsList();" style="height: 38px;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card table-container">
+                        <div class="card-header flex-between mb-2">
+                            <h3>Select Records to Invoice</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="app.selectAllFilteredInvoices()">Select All Filtered</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>Date</th>
+                                    <th>Client</th>
+                                    <th>Service</th>
+                                    <th>Price/Discount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-records-body">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary Sidebar -->
+                <div class="invoice-sidebar">
+                    <div class="card sticky-card">
+                        <h3 style="margin-bottom: 1rem;"><i data-lucide="calculator" style="width:18px;height:18px;margin-bottom:-3px;"></i> Invoice Summary</h3>
+                        <div class="invoice-summary">
+                            <div class="summary-row">
+                                <span>Selected Items:</span>
+                                <span id="inv-sel-count">0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Total Price:</span>
+                                <span id="inv-sel-price">$0.00</span>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Total Fees:</span>
+                                <span id="inv-sel-fee">$0.00</span>
+                            </div>
+                            <hr>
+                            <div class="summary-row strong">
+                                <span>Total (Pay + Super):</span>
+                                <span id="inv-sel-subtotal">$0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span id="inv-super-label">Super (12%):</span>
+                                <span id="inv-sel-super">$0.00</span>
+                            </div>
+                            <div class="summary-row strong highlight">
+                                <span>Net Pay:</span>
+                                <span id="inv-sel-pay">$0.00</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-block mt-4" id="btn-generate-invoice" onclick="app.generateInvoice()" disabled>
+                            <i data-lucide="file-check-2"></i> Generate & Save PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-services" class="view hidden">
+            <header class="view-header flex-between">
+                <div>
+                    <h1>Services & Prices (RDM)</h1>
+                    <p>Define standard prices and fees for your services.</p>
+                </div>
+                <button class="btn btn-primary" onclick="app.openServiceModal()">
+                    <i data-lucide="plus"></i> Add Service
+                </button>
+            </header>
+            
+            <div class="card table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Base Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="services-table-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-history" class="view hidden">
+            <header class="view-header">
+                <h1>Invoice History</h1>
+                <p>View and re-download previously generated invoices.</p>
+            </header>
+            
+            <div class="card table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date Generated</th>
+                            <th>Invoice #</th>
+                            <th>Billed To</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-settings" class="view hidden">
+            <header class="view-header">
+                <h1>Configuration & Backup</h1>
+                <p>Manage your data and global settings.</p>
+            </header>
+            
+            <div class="settings-grid">
+                <div class="card">
+                    <h3>Global Settings</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Superannuation Rate (%)</label>
+                            <input type="number" step="0.5" id="setting-super-rate" value="12" />
+                            <small>Standard AU rate is currently 12%</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Default Service Fee (%)</label>
+                            <input type="number" step="0.5" id="setting-fee-rate" value="30" />
+                            <small>Agency or service fee deduction</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="app.saveSettings()">Save Settings</button>
+                    <div id="settings-save-msg" class="success-msg hidden">Saved!</div>
+                </div>
+
+                <div class="card">
+                    <h3>Invoice Configuration</h3>
+                    <p class="text-muted text-sm mb-4">These details will automatically be printed on generated PDFs.</p>
+                    <div class="form-group">
+                        <label>Provider Details (Your Name & ABN)</label>
+                        <textarea id="setting-provider-details" rows="3" placeholder="Ashley Gould&#10;ABN: 12 345 678 900&#10;Sleep Collective"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Bank Details (BSB & Account)</label>
+                        <textarea id="setting-bank-details" rows="2" placeholder="BSB: 000-000&#10;Account: 12345678"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Default Billed To</label>
+                        <textarea id="setting-billed-to" rows="3" placeholder="Company Name&#10;123 Address St&#10;City, State"></textarea>
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="app.saveSettings()">Save Configuration</button>
+                    <div id="config-save-msg" class="success-msg hidden">Saved!</div>
+                </div>
+                
+                <div class="card">
+                    <h3>Data Backup</h3>
+                    <p>Your data is securely stored in this browser. However, to ensure you never lose it, export a backup file regularly.</p>
+                    <div class="action-buttons mt-4">
+                        <button class="btn btn-outline" onclick="app.exportDatabase()">
+                            <i data-lucide="download"></i> Export Data (.json)
+                        </button>
+                        
+                        <div class="upload-btn-wrapper">
+                            <button class="btn btn-secondary">
+                                <i data-lucide="upload"></i> Restore from Backup
+                            </button>
+                            <input type="file" id="import-file" accept=".json" onchange="app.importDatabase(event)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-tax" class="view hidden">
+            <header class="view-header flex-between">
+                <div>
+                    <h1>Tax Summaries</h1>
+                    <p>Financial Year aggregates for your accountant.</p>
+                </div>
+                <div class="form-group" style="margin: 0; min-width: 200px;">
+                    <select id="tax-fy-select" onchange="app.renderTaxSummary()">
+                        <option value="">No Data</option>
+                    </select>
+                </div>
+            </header>
+            
+            <div class="dashboard-stats" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Gross Income</p>
+                        <h3 id="tax-gross">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-info">
+                        <p>Service Fees</p>
+                        <h3 id="tax-fees">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Superannuation</p>
+                        <h3 id="tax-super">$0.00</h3>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-info">
+                        <p>Net Take-Home</p>
+                        <h3 id="tax-net">$0.00</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card table-container">
+                <div class="card-header flex-between mb-2">
+                    <h3>Monthly Breakdown</h3>
+                    <button class="btn btn-primary" onclick="app.generateTaxStatementPDF()" id="btn-export-tax" disabled>
+                        <i data-lucide="download"></i> Download PDF Statement
+                    </button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Records</th>
+                            <th>Gross Income</th>
+                            <th>Fees</th>
+                            <th>Super</th>
+                            <th>Net Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tax-monthly-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay hidden" id="record-modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="record-modal-title">Add Record</h3>
+            <button class="btn-icon" onclick="app.closeModal('record-modal-overlay')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="record-form" onsubmit="app.saveRecord(event)">
+                <input type="hidden" id="record-id">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="record-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Client</label>
+                    <input type="text" id="record-client" required placeholder="e.g. Jane Doe">
+                </div>
+                <div class="form-group">
+                    <label>Service Provided</label>
+                    <select id="record-service" required onchange="app.autoFillServiceData()">
+                        <option value="">-- Select a Service --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" step="0.01" id="record-price" required oninput="app.calculateRecordPreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Fee Percentage (%)</label>
+                        <input type="number" step="0.1" id="record-fee-pct" required oninput="app.calculateRecordPreview()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Discount Applied</label>
+                    <select id="record-discount-code" onchange="app.calculateRecordPreview()">
+                        <option value="">None</option>
+                        <option value="TPAV">TPAV (10% Off)</option>
+                        <option value="FAMILY">Family/Friends (10% Off)</option>
+                    </select>
+                </div>
+                
+                <div class="calc-preview">
+                    <p>Calculated Total: <strong id="preview-total">$0.00</strong></p>
+                    <p>Calculated Super: <strong id="preview-super">$0.00</strong></p>
+                    <p>Estimated Pay: <strong id="preview-pay" class="highlight">$0.00</strong></p>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="app.closeModal('record-modal-overlay')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay hidden" id="service-modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="service-modal-title">Add Service</h3>
+            <button class="btn-icon" onclick="app.closeModal('service-modal-overlay')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="service-form" onsubmit="app.saveService(event)">
+                <input type="hidden" id="service-id">
+                <div class="form-group">
+                    <label>Service Name</label>
+                    <input type="text" id="service-name" required placeholder="e.g. Initial Consultation">
+                </div>
+                <div class="form-group">
+                    <label>Base Price ($)</label>
+                    <input type="number" step="0.01" id="service-price" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="app.closeModal('service-modal-overlay')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Service</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay hidden" id="confirm-modal-overlay">
+    <div class="modal" style="max-width: 400px; text-align: center;">
+        <div class="modal-header" style="justify-content: center;">
+            <h3 id="confirm-modal-title">Confirm Action</h3>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-modal-message" style="margin-bottom: 24px; color: var(--text-muted);"></p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button type="button" class="btn btn-outline" onclick="app.closeModal('confirm-modal-overlay')">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-modal-btn" style="background-color: #DC2626;">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
