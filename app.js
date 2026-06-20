@@ -60,6 +60,9 @@ const app = {
         if (document.getElementById('setting-fee-rate')) document.getElementById('setting-fee-rate').value = this.settings.feeRate || 30;
         if (document.getElementById('inv-fee-override')) document.getElementById('inv-fee-override').value = this.settings.feeRate || 30;
         document.getElementById('inv-super-label').innerText = `Super (${this.settings.superRate || 12}%):`;
+        if (document.getElementById('th-super-header')) {
+            document.getElementById('th-super-header').innerText = `Super (${this.settings.superRate || 12}%)`;
+        }
         if (document.getElementById('setting-provider-details')) document.getElementById('setting-provider-details').value = this.settings.providerDetails || '';
         if (document.getElementById('setting-bank-details')) document.getElementById('setting-bank-details').value = this.settings.bankDetails || '';
         if (document.getElementById('setting-billed-to')) document.getElementById('setting-billed-to').value = this.settings.billedTo || '';
@@ -992,7 +995,7 @@ const app = {
         let feeAmt = effectivePrice * (pFeePct / 100);
         let grossPay = effectivePrice - feeAmt;
         let superRate = this.settings.superRate || 12;
-        let superAmt = grossPay * (superRate / 100);
+        let superAmt = grossPay - (grossPay / (1 + superRate / 100));
         let netPay = grossPay - superAmt;
 
         return { basePrice: price, effectivePrice, feeAmt, grossPay, netPay, superAmt, discountCodeApplied };
