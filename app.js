@@ -137,10 +137,12 @@ const app = {
         tbody.innerHTML = '';
         recentUninvoiced.forEach(r => {
             const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+            const childInfo = (r.childName || r.childAge) ? 
+                `<br/><span class="text-muted" style="font-size:0.85em;">Child: ${r.childName || '-'}${r.childAge ? ` (Age: ${r.childAge})` : ''}</span>` : '';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${this.formatDate(r.date)}</td>
-                <td>${r.client}</td>
+                <td>${r.client}${childInfo}</td>
                 <td>${this.getServiceName(r.serviceId)}</td>
                 <td><strong>${this.formatCurrency(fin.netPay)}</strong></td>
             `;
@@ -229,6 +231,8 @@ const app = {
         document.getElementById('record-date').value = today;
         
         document.getElementById('record-client').value = '';
+        document.getElementById('record-child-name').value = '';
+        document.getElementById('record-child-age').value = '';
         document.getElementById('record-service').value = '';
         document.getElementById('record-price').value = '';
         document.getElementById('record-fee-pct').value = this.settings.feeRate || 30;
@@ -243,6 +247,8 @@ const app = {
                 document.getElementById('record-id').value = r.id;
                 document.getElementById('record-date').value = r.date;
                 document.getElementById('record-client').value = r.client;
+                document.getElementById('record-child-name').value = r.childName || '';
+                document.getElementById('record-child-age').value = r.childAge || '';
                 document.getElementById('record-service').value = r.serviceId;
                 document.getElementById('record-price').value = r.price;
                 document.getElementById('record-fee-pct').value = r.feePct ?? (this.settings.feeRate || 30);
@@ -282,6 +288,8 @@ const app = {
             id: document.getElementById('record-id').value || null,
             date: document.getElementById('record-date').value,
             client: document.getElementById('record-client').value,
+            childName: document.getElementById('record-child-name').value,
+            childAge: document.getElementById('record-child-age').value,
             serviceId: document.getElementById('record-service').value,
             price: document.getElementById('record-price').value,
             feePct: document.getElementById('record-fee-pct').value,
@@ -324,10 +332,13 @@ const app = {
                 `<span style="text-decoration:line-through; color:#9ca3af; font-size:0.85em;">${this.formatCurrency(fin.basePrice)}</span><br/>${this.formatCurrency(fin.effectivePrice)} <span class="badge" style="background:#E0E7FF;color:#3730A3;font-size:0.7em;">${fin.discountCodeApplied}</span>` 
                 : this.formatCurrency(fin.basePrice);
 
+            const childInfo = (r.childName || r.childAge) ? 
+                `<br/><span class="text-muted" style="font-size:0.85em;">Child: ${r.childName || '-'}${r.childAge ? ` (Age: ${r.childAge})` : ''}</span>` : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${this.formatDate(r.date)}</td>
-                <td>${r.client}</td>
+                <td>${r.client}${childInfo}</td>
                 <td>${this.getServiceName(r.serviceId)}</td>
                 <td>${priceDisp}</td>
                 <td>${r.feePct || (this.settings.feeRate || 30)}%</td>
