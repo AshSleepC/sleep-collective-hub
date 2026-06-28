@@ -1028,6 +1028,7 @@ input:focus, select:focus {
     grid-template-columns: 1fr;
   }
   
+  .dashboard-stats,
   .stat-grid {
     grid-template-columns: 1fr;
   }
