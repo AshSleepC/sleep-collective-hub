@@ -172,10 +172,10 @@ const app = {
                 `<br/><span class="text-muted" style="font-size:0.85em;">Child: ${r.childName || '-'}${r.childAge ? ` (Age: ${r.childAge})` : ''}</span>` : '';
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${this.formatDate(r.date)}</td>
-                <td>${r.client}${childInfo}</td>
-                <td>${this.getServiceName(r.serviceId)}</td>
-                <td><strong>${this.formatCurrency(fin.netPay)}</strong></td>
+                <td data-label="Date">${this.formatDate(r.date)}</td>
+                <td data-label="Client">${r.client}${childInfo}</td>
+                <td data-label="Service">${this.getServiceName(r.serviceId)}</td>
+                <td data-label="Take Home">${this.formatCurrency(fin.netPay)}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -712,9 +712,9 @@ const app = {
                 periodLabel = half === '1' ? `1–15 ${monthName}` : `16–end ${monthName}`;
             }
             tr.innerHTML = `
-                <td><strong>${periodLabel}</strong><br><small class="text-muted">${inv.id}</small></td>
-                <td>${inv.recordIds ? inv.recordIds.length : '—'}</td>
-                <td><strong class="highlight-pay">${this.formatCurrency(inv.summary.totalPay)}</strong></td>
+                <td data-label="Period"><strong>${periodLabel}</strong><br><small class="text-muted">${inv.id}</small></td>
+                <td data-label="Records">${inv.recordIds ? inv.recordIds.length : '—'}</td>
+                <td data-label="Total"><strong class="highlight-pay">${this.formatCurrency(inv.summary.totalPay)}</strong></td>
                 <td>
                     <button class="btn-icon" onclick="app.downloadPastInvoice('${inv.id}')" title="Re-download PDF"><i data-lucide="download"></i></button>
                     <button class="btn-icon text-danger" onclick="app.deleteInvoice('${inv.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
@@ -796,10 +796,10 @@ const app = {
                 <td style="text-align:center;">
                     <input style="transform: scale(1.3); cursor: pointer;" type="checkbox" id="inv-chk-${r.id}" ${isSelected ? 'checked' : ''} onchange="app.toggleInvoiceSelection('${r.id}')">
                 </td>
-                <td>${this.formatDate(r.date)}</td>
-                <td><strong>${r.client}</strong></td>
-                <td>${serviceName}</td>
-                <td>${priceDisp}</td>
+                <td data-label="Date">${this.formatDate(r.date)}</td>
+                <td data-label="Client"><strong>${r.client}</strong></td>
+                <td data-label="Service">${serviceName}</td>
+                <td data-label="Price">${priceDisp}</td>
             `;
 
             tr.addEventListener('click', (e) => {
@@ -1059,10 +1059,10 @@ const app = {
         this.invoices.forEach(inv => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${this.formatDate(inv.date)}</td>
-                <td><strong>${inv.id}</strong></td>
-                <td><small>${inv.billedTo ? inv.billedTo.split('\n')[0] : 'N/A'}</small></td>
-                <td><strong>${this.formatCurrency(inv.summary.totalPay)}</strong></td>
+                <td data-label="Date">${this.formatDate(inv.date)}</td>
+                <td data-label="Invoice #"><strong>${inv.id}</strong></td>
+                <td data-label="Client"><small>${inv.billedTo ? inv.billedTo.split('\n')[0] : 'N/A'}</small></td>
+                <td data-label="Amount"><strong>${this.formatCurrency(inv.summary.totalPay)}</strong></td>
                 <td>
                     <button class="btn-icon" onclick="app.downloadPastInvoice('${inv.id}')" title="Download PDF"><i data-lucide="download"></i></button>
                     <button class="btn-icon text-danger" onclick="app.deleteInvoice('${inv.id}')" title="Delete Ledger Entry"><i data-lucide="trash-2"></i></button>

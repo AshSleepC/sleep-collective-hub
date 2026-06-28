@@ -1048,5 +1048,95 @@ input:focus, select:focus {
     width: 100%;
     justify-content: center;
   }
+
+  /* 1. Modal Bottom Sheet */
+  .modal-overlay {
+    align-items: flex-end; /* Align to bottom */
+  }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 24px 24px 0 0;
+    padding: 32px 24px max(32px, env(safe-area-inset-bottom));
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* 2. Mobile Tables -> Cards */
+  .table-container {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+  .data-table, .data-table thead, .data-table tbody, .data-table th, .data-table td, .data-table tr {
+    display: block;
+  }
+  .data-table thead tr {
+    display: none; /* Hide headers */
+  }
+  .data-table tr {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .data-table td {
+    border: none;
+    padding: 8px 0;
+    position: relative;
+    padding-left: 45%;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .data-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 40%;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  
+  /* 3. Show FAB */
+  .fab-button {
+    display: flex !important;
+  }
 }
 
+/* Floating Action Button (Hidden on Desktop) */
+.fab-button {
+  display: none;
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 900;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s;
+}
+.fab-button:active {
+  transform: scale(0.95);
+}
+.fab-button i {
+  width: 24px;
+  height: 24px;
+}
