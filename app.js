@@ -53,16 +53,10 @@ const app = {
         this.renderServicesTable();
         this.renderRecordsTable();
         this.populateServiceDropdown();
-        this.populateInvoiceServiceFilter();
         
         // Update Setting Input
         document.getElementById('setting-super-rate').value = this.settings.superRate || 12;
         if (document.getElementById('setting-fee-rate')) document.getElementById('setting-fee-rate').value = this.settings.feeRate || 30;
-        if (document.getElementById('inv-fee-override')) document.getElementById('inv-fee-override').value = this.settings.feeRate || 30;
-        document.getElementById('inv-super-label').innerText = `Super (${this.settings.superRate || 12}%):`;
-        if (document.getElementById('th-super-header')) {
-            document.getElementById('th-super-header').innerText = `Super (${this.settings.superRate || 12}%)`;
-        }
         if (document.getElementById('setting-provider-details')) document.getElementById('setting-provider-details').value = this.settings.providerDetails || '';
         if (document.getElementById('setting-bank-details')) document.getElementById('setting-bank-details').value = this.settings.bankDetails || '';
         if (document.getElementById('setting-billed-to')) document.getElementById('setting-billed-to').value = this.settings.billedTo || '';
@@ -80,7 +74,7 @@ const app = {
         }
 
         if (viewId === 'invoices') {
-            this.renderInvoiceRecordsList();
+            this.renderBillingPeriods();
         } else if (viewId === 'history') {
             this.renderInvoiceHistoryTable();
         } else if (viewId === 'tax') {
@@ -439,20 +433,278 @@ const app = {
         lucide.createIcons();
     },
 
-    // --- Invoices ---
-    async populateInvoiceServiceFilter() {
-        const filter = document.getElementById('inv-filter-service');
-        if(!filter) return;
-        filter.innerHTML = '<option value="">All Services</option>';
-        if (this.services.length === 0) return;
+    // --- Billing Period Invoice Generator ---
+    billingMonth: null, // { year, month } — null means current month
 
-        this.services.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.innerText = s.name;
-            filter.appendChild(opt);
+    getBillingMonth() {
+        if (!this.billingMonth) {
+            const now = new Date();
+            this.billingMonth = { year: now.getFullYear(), month: now.getMonth() };
+        }
+        return this.billingMonth;
+    },
+
+    shiftBillingMonth(delta) {
+        const bm = this.getBillingMonth();
+        let m = bm.month + delta;
+        let y = bm.year;
+        if (m > 11) { m = 0; y++; }
+        if (m < 0)  { m = 11; y--; }
+        this.billingMonth = { year: y, month: m };
+        this.renderBillingPeriods();
+    },
+
+    renderBillingPeriods() {
+        const bm = this.getBillingMonth();
+        const { year, month } = bm;
+
+        // Update label
+        const label = new Date(year, month, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+        document.getElementById('billing-month-label').innerText = label;
+
+        // Period date boundaries
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const p1Start = new Date(year, month, 1);
+        const p1End   = new Date(year, month, 15, 23, 59, 59, 999);
+        const p2Start = new Date(year, month, 16);
+        const p2End   = new Date(year, month, daysInMonth, 23, 59, 59, 999);
+
+        // Records for this month
+        const monthRecords = this.records.filter(r => {
+            const d = new Date(r.date);
+            return d >= p1Start && d <= p2End;
+        });
+
+        const firstHalf  = monthRecords.filter(r => new Date(r.date) <= p1End);
+        const secondHalf = monthRecords.filter(r => new Date(r.date) >= p2Start);
+
+        // Find existing invoices that cover these periods (by billingPeriod tag)
+        const p1Invoice = this.invoices.find(i => i.billingPeriod === `${year}-${month+1}-1`);
+        const p2Invoice = this.invoices.find(i => i.billingPeriod === `${year}-${month+1}-2`);
+
+        const grid = document.getElementById('billing-periods-grid');
+        grid.innerHTML = '';
+
+        const monthShort = new Date(year, month, 1).toLocaleDateString('en-AU', { month: 'short' });
+        const p1Label = `1–15 ${monthShort}`;
+        const p2Label = `16–${daysInMonth} ${monthShort}`;
+
+        grid.appendChild(this.buildPeriodCard(
+            `First Half — ${p1Label}`,
+            firstHalf, p1Invoice,
+            `${year}-${month+1}-1`,
+            p1Start, p1End
+        ));
+        grid.appendChild(this.buildPeriodCard(
+            `Second Half — ${p2Label}`,
+            secondHalf, p2Invoice,
+            `${year}-${month+1}-2`,
+            p2Start, p2End
+        ));
+
+        lucide.createIcons();
+        this.renderBillingHistory();
+    },
+
+    buildPeriodCard(title, records, existingInvoice, periodKey, periodStart, periodEnd) {
+        const superRate = this.settings.superRate || 12;
+        const uninvoiced = records.filter(r => !r.invoiced);
+        const invoiced   = records.filter(r => r.invoiced);
+        const isFullyInvoiced = uninvoiced.length === 0 && existingInvoice;
+        const hasUninvoiced = uninvoiced.length > 0;
+
+        // Compute totals for uninvoiced
+        let totalNetPay = 0;
+        uninvoiced.forEach(r => {
+            const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
+            totalNetPay += fin.netPay;
+        });
+
+        const card = document.createElement('div');
+        card.className = `billing-period-card${isFullyInvoiced ? ' invoiced' : ''}`;
+
+        // Status badge
+        const badge = hasUninvoiced
+            ? `<span class="badge warning">${uninvoiced.length} Uninvoiced</span>`
+            : isFullyInvoiced
+                ? `<span class="badge success">Invoiced ✓</span>`
+                : `<span class="badge" style="background:#f3f4f6;color:#6b7280;">No Records</span>`;
+
+        // Record rows (uninvoiced first, then greyed invoiced)
+        let rowsHtml = '';
+        uninvoiced.forEach(r => {
+            const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
+            rowsHtml += `
+                <div class="bpc-row">
+                    <div class="bpc-row-left">
+                        <span class="bpc-client">${r.client}</span>
+                        <span class="bpc-service">${this.getServiceName(r.serviceId)}</span>
+                    </div>
+                    <span class="bpc-amount">${this.formatCurrency(fin.netPay)}</span>
+                </div>`;
+        });
+        invoiced.forEach(r => {
+            const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
+            rowsHtml += `
+                <div class="bpc-row bpc-row-invoiced">
+                    <div class="bpc-row-left">
+                        <span class="bpc-client">${r.client}</span>
+                        <span class="bpc-service">${this.getServiceName(r.serviceId)}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="bpc-amount" style="opacity:0.5;">${this.formatCurrency(fin.netPay)}</span>
+                        <span class="badge success" style="font-size:0.7em;">Invoiced</span>
+                    </div>
+                </div>`;
+        });
+
+        if (records.length === 0) {
+            rowsHtml = `<div class="bpc-empty">No records for this period.</div>`;
+        }
+
+        // Action button
+        let actionBtn = '';
+        if (hasUninvoiced) {
+            actionBtn = `<button class="btn btn-primary btn-block bpc-generate-btn" onclick="app.generateBillingPeriodInvoice('${periodKey}', '${periodStart.toISOString()}', '${periodEnd.toISOString()}')">
+                <i data-lucide="file-check-2"></i> Generate Invoice →
+            </button>`;
+        } else if (isFullyInvoiced) {
+            actionBtn = `<button class="btn btn-outline btn-block" onclick="app.downloadPastInvoice('${existingInvoice.id}')">
+                <i data-lucide="download"></i> Re-download PDF
+            </button>`;
+        }
+
+        // Total footer
+        const totalRow = hasUninvoiced
+            ? `<div class="bpc-total"><span>Estimated Net Pay</span><strong>${this.formatCurrency(totalNetPay)}</strong></div>`
+            : '';
+
+        card.innerHTML = `
+            <div class="bpc-header">
+                <h3 class="bpc-title">${title}</h3>
+                ${badge}
+            </div>
+            <div class="bpc-records">${rowsHtml}</div>
+            ${totalRow}
+            ${actionBtn ? `<div class="bpc-action">${actionBtn}</div>` : ''}
+        `;
+
+        return card;
+    },
+
+    async generateBillingPeriodInvoice(periodKey, periodStartISO, periodEndISO) {
+        const periodStart = new Date(periodStartISO);
+        const periodEnd   = new Date(periodEndISO);
+
+        const selectedRecords = this.records.filter(r => {
+            const d = new Date(r.date);
+            return !r.invoiced && d >= periodStart && d <= periodEnd;
+        }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (selectedRecords.length === 0) return;
+
+        const superRate = this.settings.superRate || 12;
+        let totalPrice = 0, totalFee = 0, totalGrossPay = 0, totalSuper = 0, totalPay = 0;
+        const tableData = [];
+
+        selectedRecords.forEach(r => {
+            const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+            totalPrice += fin.effectivePrice;
+            totalFee   += fin.feeAmt;
+            tableData.push([
+                this.formatDate(r.date),
+                r.client,
+                this.getServiceName(r.serviceId),
+                this.formatCurrency(fin.basePrice),
+                fin.discountCodeApplied ? fin.discountCodeApplied.split(' ')[0] : '-',
+                this.formatCurrency(fin.effectivePrice),
+                `${r.feePct || (this.settings.feeRate || 30)}% (-${this.formatCurrency(fin.feeAmt)})`,
+                this.formatCurrency(fin.grossPay)
+            ]);
+        });
+
+        totalGrossPay = totalPrice - totalFee;
+        totalSuper    = totalGrossPay - (totalGrossPay / (1 + superRate / 100));
+        totalPay      = totalGrossPay - totalSuper;
+
+        const invoiceId = 'INV-' + Date.now().toString().slice(-6);
+        const dateStr   = new Date().toLocaleDateString('en-AU');
+
+        const invoiceData = {
+            id: invoiceId,
+            date: new Date().toISOString(),
+            dateStr,
+            billingPeriod: periodKey,
+            providerDetails: this.settings.providerDetails || 'Provider Name\nABN: 00 000 000 000',
+            bankDetails:     this.settings.bankDetails     || 'Bank Details\nBSB: 000-000\nACC: 000000',
+            billedTo:        this.settings.billedTo        || 'Billed To Details',
+            tableData,
+            summary: { totalPrice, totalFee, totalGrossPay, totalSuper, totalPay, superRate },
+            recordIds: selectedRecords.map(r => r.id)
+        };
+
+        this.createInvoicePDF(invoiceData);
+        await db.saveInvoice(invoiceData);
+        await db.markRecordsInvoiced(invoiceData.recordIds);
+        await this.loadData();
+        this.renderBillingPeriods();
+    },
+
+    renderBillingHistory() {
+        const tbody = document.getElementById('billing-history-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        // Show invoices older than the current billing month (or all past invoices)
+        const bm = this.getBillingMonth();
+        const cutoff = new Date(bm.year, bm.month, 1);
+
+        const pastInvoices = this.invoices
+            .filter(i => new Date(i.date) < cutoff)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (pastInvoices.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:1rem;">No previous billing periods.</td></tr>`;
+            return;
+        }
+
+        pastInvoices.forEach(inv => {
+            const tr = document.createElement('tr');
+            // Friendly period label using billingPeriod tag if available
+            let periodLabel = this.formatDate(inv.date);
+            if (inv.billingPeriod) {
+                const [y, m, half] = inv.billingPeriod.split('-');
+                const monthName = new Date(y, m - 1, 1).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+                periodLabel = half === '1' ? `1–15 ${monthName}` : `16–end ${monthName}`;
+            }
+            tr.innerHTML = `
+                <td><strong>${periodLabel}</strong><br><small class="text-muted">${inv.id}</small></td>
+                <td>${inv.recordIds ? inv.recordIds.length : '—'}</td>
+                <td><strong class="highlight-pay">${this.formatCurrency(inv.summary.totalPay)}</strong></td>
+                <td>
+                    <button class="btn-icon" onclick="app.downloadPastInvoice('${inv.id}')" title="Re-download PDF"><i data-lucide="download"></i></button>
+                    <button class="btn-icon text-danger" onclick="app.deleteInvoice('${inv.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+    },
+
+    downloadPastInvoice(id) {
+        const inv = this.invoices.find(i => i.id === id);
+        if (inv) this.createInvoicePDF(inv);
+    },
+
+    async deleteInvoice(id) {
+        this.showConfirm("Are you sure you want to delete this invoice from your history? The underlying service records will NOT be un-invoiced.", async () => {
+            await db.deleteInvoice(id);
+            await this.loadData();
+            this.renderBillingPeriods();
         });
     },
+
+
 
     renderInvoiceRecordsList() {
         const container = document.getElementById('invoice-records-body');

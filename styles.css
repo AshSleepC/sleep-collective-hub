@@ -668,4 +668,176 @@ input:focus, select:focus {
   margin-bottom: 24px;
 }
 
+/* ── Billing Period Invoice Generator ─────────────────────── */
+
+.billing-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.billing-month-label {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  min-width: 200px;
+  text-align: center;
+}
+
+.billing-nav-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--primary-color);
+}
+.billing-nav-btn:hover {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
+.billing-periods-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 700px) {
+  .billing-periods-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.billing-period-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: box-shadow 0.2s;
+}
+.billing-period-card:hover {
+  box-shadow: var(--shadow-md);
+}
+.billing-period-card.invoiced {
+  background: #FAFFFE;
+  border-color: var(--success-border);
+}
+
+.bpc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bpc-title {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin: 0;
+}
+
+.bpc-records {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  min-height: 60px;
+}
+
+.bpc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-color);
+  border-radius: 6px;
+  gap: 12px;
+}
+
+.bpc-row-invoiced {
+  opacity: 0.6;
+}
+
+.bpc-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bpc-client {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bpc-service {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.bpc-amount {
+  font-weight: 600;
+  color: var(--primary-color);
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.bpc-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 12px;
+  text-align: center;
+}
+
+.bpc-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding-top: 14px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.bpc-total strong {
+  font-size: 1.3rem;
+  color: #10B981;
+  font-weight: 700;
+}
+
+.bpc-action {
+  margin-top: auto;
+}
+
+.bpc-generate-btn {
+  font-size: 1rem;
+  padding: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+
 

@@ -168,95 +168,43 @@
         <div id="view-invoices" class="view hidden">
             <header class="view-header">
                 <h1>Invoice Generator</h1>
-                <p>Filter your uninvoiced records, select them, and generate a PDF.</p>
+                <p>Your records are automatically grouped into billing periods. One tap to generate.</p>
             </header>
 
-            <div class="invoice-layout" style="display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; align-items: start;">
-                <!-- Main Data Area -->
-                <div class="invoice-main">
-                    <div class="card mb-4" style="padding: 1rem;">
-                        <h4 style="margin-bottom: 0.5rem;">Filters</h4>
-                        <div class="flex-between" style="gap: 1rem; align-items: flex-end;">
-                            <div class="form-group" style="margin: 0; flex: 1;">
-                                <label style="font-size: 0.8rem;">Start Date</label>
-                                <input type="date" id="inv-filter-start" onchange="app.renderInvoiceRecordsList()">
-                            </div>
-                            <div class="form-group" style="margin: 0; flex: 1;">
-                                <label style="font-size: 0.8rem;">End Date</label>
-                                <input type="date" id="inv-filter-end" onchange="app.renderInvoiceRecordsList()">
-                            </div>
-                            <div class="form-group" style="margin: 0; flex: 1;">
-                                <label style="font-size: 0.8rem;">Filter by Service</label>
-                                <select id="inv-filter-service" onchange="app.renderInvoiceRecordsList()">
-                                    <option value="">All Services</option>
-                                    <!-- Populated by JS -->
-                                </select>
-                            </div>
-                            <button class="btn btn-outline" onclick="document.getElementById('inv-filter-start').value=''; document.getElementById('inv-filter-end').value=''; document.getElementById('inv-filter-service').value=''; app.renderInvoiceRecordsList();" style="height: 38px;">
-                                Clear
-                            </button>
-                        </div>
-                    </div>
+            <!-- Month Navigator -->
+            <div class="billing-month-nav">
+                <button class="btn-icon billing-nav-btn" onclick="app.shiftBillingMonth(-1)" title="Previous Month">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <span id="billing-month-label" class="billing-month-label">June 2026</span>
+                <button class="btn-icon billing-nav-btn" onclick="app.shiftBillingMonth(1)" title="Next Month">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </div>
 
-                    <div class="card table-container">
-                        <div class="card-header flex-between mb-2">
-                            <h3>Select Records to Invoice</h3>
-                            <button class="btn btn-secondary btn-sm" onclick="app.selectAllFilteredInvoices()">Select All Filtered</button>
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Select</th>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Service</th>
-                                    <th>Price/Discount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoice-records-body">
-                                <!-- Filled by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <!-- Two Period Cards -->
+            <div class="billing-periods-grid" id="billing-periods-grid">
+                <!-- Filled by JS -->
+            </div>
 
-                <!-- Summary Sidebar -->
-                <div class="invoice-sidebar">
-                    <div class="card sticky-card">
-                        <h3 style="margin-bottom: 1rem;"><i data-lucide="calculator" style="width:18px;height:18px;margin-bottom:-3px;"></i> Invoice Summary</h3>
-                        <div class="invoice-summary">
-                            <div class="summary-row">
-                                <span>Selected Items:</span>
-                                <span id="inv-sel-count">0</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Total Price:</span>
-                                <span id="inv-sel-price">$0.00</span>
-                            </div>
-
-                            <div class="summary-row">
-                                <span>Total Fees:</span>
-                                <span id="inv-sel-fee">$0.00</span>
-                            </div>
-                            <hr>
-                            <div class="summary-row strong">
-                                <span>Total (Pay + Super):</span>
-                                <span id="inv-sel-subtotal">$0.00</span>
-                            </div>
-                            <div class="summary-row">
-                                <span id="inv-super-label">Super (12%):</span>
-                                <span id="inv-sel-super">$0.00</span>
-                            </div>
-                            <div class="summary-row strong highlight">
-                                <span>Net Pay:</span>
-                                <span id="inv-sel-pay">$0.00</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-block mt-4" id="btn-generate-invoice" onclick="app.generateInvoice()" disabled>
-                            <i data-lucide="file-check-2"></i> Generate & Save PDF
-                        </button>
-                    </div>
-                </div>
+            <!-- Previous Billing Periods History -->
+            <div class="records-section-header mt-4" style="margin-top: 2.5rem;">
+                <h3>Previous Billing Periods</h3>
+            </div>
+            <div class="card table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Records</th>
+                            <th>Net Pay</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billing-history-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
