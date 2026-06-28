@@ -1404,13 +1404,31 @@ input:focus, select:focus, textarea:focus {
   z-index: 1;
 }
 
-.timeline-dot.advice-given, .badge.advice-given { background: #E0E7FF; color: #3730A3; }
-.timeline-dot.progress-update, .badge.progress-update { background: #D1FAE5; color: #065F46; }
-.timeline-dot.issue---roadblock, .badge.issue---roadblock { background: #FEE2E2; color: #991B1B; }
-.timeline-dot.meeting-notes, .badge.meeting-notes { background: #FEF3C7; color: #92400E; }
-.timeline-dot.15-min-call, .badge.15-min-call { background: #FCE7F3; color: #9D174D; }
-.timeline-dot.30-min-consult, .badge.30-min-consult { background: #E0E7FF; color: #3730A3; }
-.timeline-dot.rested-app-support, .badge.rested-app-support { background: #CFFAFE; color: #155E75; }
+.category-pills button {
+  border: 2px solid transparent; 
+  opacity: 0.5; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  font-weight: 500;
+  padding: 6px 12px;
+}
+.category-pills button:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+.category-pills button.selected {
+  opacity: 1; 
+  border-color: currentColor; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+  transform: scale(1.02);
+}
+
+.timeline-dot.advice-given, .badge.advice-given { background: #FEF3C7; color: #92400E; } /* Soft Gold */
+.timeline-dot.progress-update, .badge.progress-update { background: #DCFCE7; color: #166534; } /* Green */
+.timeline-dot.issue, .badge.issue { background: #FEE2E2; color: #991B1B; } /* Red */
+.timeline-dot.15-min-call, .badge.15-min-call { background: #F3E8FF; color: #6B21A8; } /* Purple */
+.timeline-dot.30-min-consult, .badge.30-min-consult { background: #E2E8F0; color: #1E293B; } /* Navy/Slate */
+.timeline-dot.rested-app-support, .badge.rested-app-support { background: #CCFBF1; color: #0F766E; } /* Teal */
 
 .pinned-note {
   box-shadow: 0 4px 6px -1px rgba(252, 211, 77, 0.2), 0 2px 4px -1px rgba(252, 211, 77, 0.1);

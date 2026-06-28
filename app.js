@@ -1772,22 +1772,23 @@ const app = {
                         <h4 style="margin-bottom:12px; font-size:1rem;">Log Update</h4>
                         <form onsubmit="app.saveInteraction(event, '${client.id}')">
                             <div class="form-row" style="margin-bottom:12px;">
-                                <div class="form-group" style="margin:0;">
-                                    <select id="new-interaction-category" required style="padding:8px;">
-                                        <option value="15-Min Call">15-Min Call</option>
-                                        <option value="30-Min Consult">30-Min Consult</option>
-                                        <option value="Rested App Support">Rested App Support</option>
-                                        <option value="Advice Given">Advice Given</option>
-                                        <option value="Progress Update">Progress Update</option>
-                                        <option value="Issue">Issue / Roadblock</option>
-                                    </select>
+                                <div class="form-group" style="margin:0; flex:1;">
+                                    <input type="hidden" id="new-interaction-category" value="15-Min Call">
+                                    <div class="category-pills" id="category-pills-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        <button type="button" class="badge 15-min-call selected" onclick="app.selectCategory(this, '15-Min Call')">15-Min Call</button>
+                                        <button type="button" class="badge 30-min-consult" onclick="app.selectCategory(this, '30-Min Consult')">30-Min Consult</button>
+                                        <button type="button" class="badge rested-app-support" onclick="app.selectCategory(this, 'Rested App Support')">Rested App Support</button>
+                                        <button type="button" class="badge advice-given" onclick="app.selectCategory(this, 'Advice Given')">Advice Given</button>
+                                        <button type="button" class="badge progress-update" onclick="app.selectCategory(this, 'Progress Update')">Progress Update</button>
+                                        <button type="button" class="badge issue" onclick="app.selectCategory(this, 'Issue')">Issue / Roadblock</button>
+                                    </div>
                                 </div>
                                 <div class="form-group" style="margin:0;">
                                     <input type="datetime-local" id="new-interaction-date" required style="padding:8px;">
                                 </div>
                             </div>
                             <div class="form-group" style="margin-bottom:12px;">
-                                <textarea id="new-interaction-notes" required rows="3" placeholder="What was discussed or recommended?"></textarea>
+                                <textarea id="new-interaction-notes" required rows="3" placeholder="What was discussed or recommended?" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('btn-submit-interaction').click(); }"></textarea>
                             </div>
                             <div class="text-right">
                                 <button type="submit" id="btn-submit-interaction" class="btn btn-primary" style="padding:6px 16px;">Log Update</button>
@@ -1916,7 +1917,18 @@ const app = {
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
             dateInput.value = d.toISOString().slice(0, 16);
         }
-        if (categoryInput) categoryInput.value = inter.category;
+        if (categoryInput) {
+            categoryInput.value = inter.category;
+            const container = document.getElementById('category-pills-container');
+            if (container) {
+                Array.from(container.children).forEach(b => {
+                    b.classList.remove('selected');
+                    if (b.innerText.trim() === inter.category || (inter.category === 'Issue' && b.innerText.includes('Issue'))) {
+                        b.classList.add('selected');
+                    }
+                });
+            }
+        }
         if (notesInput) notesInput.value = inter.notes;
         
         if (submitBtn) {
@@ -1938,6 +1950,15 @@ const app = {
         if (clientId) {
             this.renderClientProfile(clientId, false);
         }
+    },
+
+    selectCategory(btnEl, categoryValue) {
+        document.getElementById('new-interaction-category').value = categoryValue;
+        const container = document.getElementById('category-pills-container');
+        if (container) {
+            Array.from(container.children).forEach(b => b.classList.remove('selected'));
+        }
+        btnEl.classList.add('selected');
     },
 
     changeTimelinePage(clientId, dir) {
