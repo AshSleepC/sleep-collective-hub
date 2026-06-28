@@ -273,8 +273,10 @@ const db = {
             key_goals:    client.keyGoals || '',
             created_at:   client.createdAt || new Date().toISOString()
         }, { onConflict: 'id' }).select();
-        
-        if (error) console.error(error);
+        if (error) {
+            console.error('Supabase Error:', error);
+            alert("Database Error: " + error.message);
+        }
         return data ? data[0] : null;
     },
 

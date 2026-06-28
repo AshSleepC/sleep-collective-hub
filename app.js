@@ -1593,35 +1593,43 @@ const app = {
     async saveClient(e) {
         e.preventDefault();
         
-        let id = document.getElementById('client-id').value;
-        if (!id) {
-            id = 'client-' + Date.now();
-        }
+        try {
+            let id = document.getElementById('client-id').value;
+            if (!id) {
+                id = 'client-' + Date.now();
+            }
 
-        const client = {
-            id: id,
-            parentName: document.getElementById('client-parent').value,
-            childName: document.getElementById('client-child').value,
-            childAge: document.getElementById('client-age').value,
-            status: document.getElementById('client-status').value,
-            packageType: document.getElementById('client-package').value,
-            startDate: new Date(document.getElementById('client-start').value).toISOString(),
-            endDate: new Date(document.getElementById('client-end').value).toISOString(),
-            keyGoals: document.getElementById('client-goals').value
-        };
+            const client = {
+                id: id,
+                parentName: document.getElementById('client-parent').value,
+                childName: document.getElementById('client-child').value,
+                childAge: document.getElementById('client-age').value,
+                status: document.getElementById('client-status').value,
+                packageType: document.getElementById('client-package').value,
+                startDate: new Date(document.getElementById('client-start').value).toISOString(),
+                endDate: new Date(document.getElementById('client-end').value).toISOString(),
+                keyGoals: document.getElementById('client-goals').value
+            };
 
-        const saved = await db.saveClient(client);
-        
-        this.clients = await db.getClients();
-        this.populateClientDropdowns();
-        this.renderClientsDashboard();
-        
-        // If we are looking at this client's profile, re-render it
-        if (document.getElementById('view-client-profile').classList.contains('active')) {
-            this.renderClientProfile(saved.id);
+            const saved = await db.saveClient(client);
+            if (!saved) {
+                alert("Database failed to save the client. Please check your internet connection or let me know!");
+                return; // Stop here, keep modal open
+            }
+            
+            this.clients = await db.getClients();
+            this.populateClientDropdowns();
+            this.renderClientsDashboard();
+            
+            if (document.getElementById('view-client-profile').classList.contains('active')) {
+                this.renderClientProfile(saved.id);
+            }
+            
+            this.closeModal('client-modal-overlay');
+        } catch (err) {
+            console.error(err);
+            alert("An error occurred while saving: " + err.message);
         }
-        
-        this.closeModal('client-modal-overlay');
     },
 
     renderClientsDashboard() {
