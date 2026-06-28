@@ -1834,3 +1834,11 @@ const app = {
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
+(async function() {
+    try {
+        await app._initApp();
+        console.log("Success");
+    } catch(e) {
+        console.error("ERROR: " + e.message);
+    }
+})();

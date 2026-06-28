@@ -66,11 +66,17 @@ const app = {
     },
 
     async _initApp() {
-        await db.init();
-        await this.loadData();
-
-        // Data loaded! Hide the loading screen
-        document.getElementById('loading-screen').classList.add('hidden');
+        try {
+            await db.init();
+            await this.loadData();
+        } catch (e) {
+            console.error("Init Error:", e);
+            alert("Oops! An error occurred loading your data: " + e.message + "\nPlease take a screenshot and send it to me.");
+        } finally {
+            // Data loaded! Hide the loading screen
+            const loader = document.getElementById('loading-screen');
+            if (loader) loader.classList.add('hidden');
+        }
 
         // Setup Nav
         document.querySelectorAll('.nav-btn').forEach(btn => {
