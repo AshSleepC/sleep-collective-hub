@@ -1657,9 +1657,13 @@ const app = {
         }
 
         filtered.forEach(client => {
-            // Find latest interaction
+            // Find latest interaction (prioritize pinned notes first, then newest date)
             const inters = this.interactions.filter(i => i.clientId === client.id);
-            inters.sort((a, b) => new Date(b.date) - new Date(a.date));
+            inters.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return new Date(b.date) - new Date(a.date);
+            });
             const latest = inters.length > 0 ? inters[0] : null;
 
             // Date math
@@ -1679,8 +1683,7 @@ const app = {
             }
 
             const card = document.createElement('div');
-            card.className = 'card client-card';
-            card.style.cursor = 'pointer';
+            card.className = 'card interactive-card client-card';
             card.onclick = () => {
                 this.renderClientProfile(client.id);
                 this.switchView('client-profile');
@@ -1706,9 +1709,11 @@ const app = {
                     ${tagHtml}
                 </div>
                 <div style="margin-bottom: 16px;">
-                    <p style="margin:0; font-weight:500;">Baby ${client.childName} <span class="text-muted">(${client.childAge})</span></p>
-                    <p class="text-sm text-muted" style="margin-top:4px;">
-                        <i data-lucide="package" style="width:14px;height:14px;vertical-align:middle;"></i> ${client.packageType}
+                    <p style="margin:0; font-weight:500; font-size: 1.1rem; color: var(--primary-color);">
+                        ${client.childName} <span class="text-muted" style="font-size: 0.95rem; font-weight: normal;">(${client.childAge})</span>
+                    </p>
+                    <p class="text-sm text-muted" style="margin-top:6px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; background: var(--bg-color); padding: 4px 8px; border-radius: 6px;">
+                        <i data-lucide="package" style="width:14px;height:14px;"></i> ${client.packageType}
                     </p>
                 </div>
                 <div class="update-preview-box">

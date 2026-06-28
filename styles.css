@@ -156,9 +156,12 @@ h1, h2, h3, h4 {
   box-shadow: var(--shadow-sm);
   padding: 32px;
   margin-bottom: 24px;
+}
+.interactive-card {
+  cursor: pointer;
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
-.card:hover {
+.interactive-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
@@ -1386,11 +1389,6 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0 !important;
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-.timeline-content:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .timeline-dot {
