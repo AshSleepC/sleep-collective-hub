@@ -71,29 +71,11 @@ const app = {
             });
         });
 
-        // 14-Day Auto-Backup check
-        this.runAutoBackupCheck();
 
         // Initialize icons
         lucide.createIcons();
     },
 
-
-    async runAutoBackupCheck() {
-        const lastBackup = this.settings.lastBackupDate;
-        const now = new Date();
-        const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-
-        if (!lastBackup || (now - new Date(lastBackup)) > twoWeeksMs) {
-            console.log("Triggering 14-day automated backup...");
-            // We'll export the database. 
-            // Browser security might require user interaction, so we do it via a minor delay or prompt.
-            // But since this is a local utility app, we trigger the download.
-            await this.exportDatabase();
-            this.settings.lastBackupDate = now.toISOString();
-            await db.saveSettings(this.settings);
-        }
-    },
 
     async loadData() {
         this.settings = await db.getSettings();
