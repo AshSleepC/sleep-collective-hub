@@ -1592,8 +1592,14 @@ const app = {
 
     async saveClient(e) {
         e.preventDefault();
+        
+        let id = document.getElementById('client-id').value;
+        if (!id) {
+            id = 'client-' + Date.now();
+        }
+
         const client = {
-            id: document.getElementById('client-id').value || null,
+            id: id,
             parentName: document.getElementById('client-parent').value,
             childName: document.getElementById('client-child').value,
             childAge: document.getElementById('client-age').value,
