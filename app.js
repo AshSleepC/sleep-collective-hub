@@ -6,6 +6,7 @@ const app = {
     records: [],
     invoices: [],
     invoiceSelection: new Set(),
+    timelinePage: 0,
 
     async init() {
         if (window.location.search.includes('beta=true')) {
@@ -1731,7 +1732,8 @@ const app = {
         lucide.createIcons();
     },
 
-    renderClientProfile(clientId) {
+    renderClientProfile(clientId, resetPage = true) {
+        if (resetPage) this.timelinePage = 0;
         const client = this.clients.find(c => c.id === clientId);
         if (!client) return;
 
@@ -1763,7 +1765,7 @@ const app = {
                 </div>
             </header>
 
-            <div class="client-profile-layout">
+            <div class="client-profile-layout" data-client-id="${client.id}">
                 <div class="client-main-col">
                     <!-- Quick Add Update -->
                     <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--primary-color);">
@@ -1797,7 +1799,7 @@ const app = {
                     <!-- Timeline -->
                     <div class="timeline-container">
                         ${inters.length === 0 ? '<p class="text-muted text-center" style="margin-top:40px;">No interactions logged yet.</p>' : ''}
-                        ${inters.map(i => {
+                        ${inters.slice(app.timelinePage * 8, (app.timelinePage + 1) * 8).map(i => {
                             const d = new Date(i.date);
                             const dateStr = d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             return `
@@ -1826,6 +1828,14 @@ const app = {
                                 </div>
                             `;
                         }).join('')}
+                        
+                        ${inters.length > 8 ? `
+                            <div style="display:flex; justify-content:space-between; margin-top:24px;">
+                                <button class="btn btn-outline" onclick="app.changeTimelinePage('${client.id}', -1)" ${this.timelinePage === 0 ? 'disabled' : ''}>Previous</button>
+                                <span class="text-muted text-sm" style="line-height:36px;">Page ${this.timelinePage + 1} of ${Math.ceil(inters.length / 8)}</span>
+                                <button class="btn btn-outline" onclick="app.changeTimelinePage('${client.id}', 1)" ${(this.timelinePage + 1) * 8 >= inters.length ? 'disabled' : ''}>Next</button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
 
@@ -1926,8 +1936,13 @@ const app = {
         const container = document.querySelector('.client-profile-layout');
         const clientId = container ? container.dataset.clientId : null;
         if (clientId) {
-            this.renderClientProfile(clientId);
+            this.renderClientProfile(clientId, false);
         }
+    },
+
+    changeTimelinePage(clientId, dir) {
+        this.timelinePage += dir;
+        this.renderClientProfile(clientId, false);
     },
 
     async deleteInteraction(id, clientId) {
