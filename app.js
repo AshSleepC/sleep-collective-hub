@@ -1,6 +1,8 @@
 const app = {
     settings: {},
     services: [],
+    clients: [],
+    interactions: [],
     records: [],
     invoices: [],
     invoiceSelection: new Set(),
@@ -80,6 +82,8 @@ const app = {
     async loadData() {
         this.settings = await db.getSettings();
         this.services = await db.getServices();
+        this.clients = await db.getClients();
+        this.interactions = await db.getInteractions();
         this.records = await db.getRecords();
         this.invoices = await db.getInvoices();
 
@@ -87,7 +91,8 @@ const app = {
         this.renderServicesTable();
         this.renderRecordsTable();
         this.populateServiceDropdown();
-        
+        this.populateClientDropdowns();
+        this.populatePackageDropdown();
         // Update Setting Input
         document.getElementById('setting-super-rate').value = this.settings.superRate || 12;
         if (document.getElementById('setting-fee-rate')) document.getElementById('setting-fee-rate').value = this.settings.feeRate || 30;
@@ -114,6 +119,8 @@ const app = {
         } else if (viewId === 'tax') {
             this.populateTaxFYDropdown();
             this.renderTaxSummary();
+        } else if (viewId === 'clients') {
+            this.renderClientsDashboard();
         }
     },
 
@@ -1003,13 +1010,32 @@ const app = {
         this.renderInvoiceHistoryTable();
         this.switchView('history');
 
-        // 2. Initiate cloud save WITHOUT awaiting, to retain user-gesture for iOS Safari PDF download
+        // 2. Initiate cloud save WITHOUT awaiting
         db.saveInvoice(invoiceData).then(() => {
             return db.markRecordsInvoiced(selectedIds);
         }).catch(err => console.error("Sync error:", err));
 
-        // 3. Generate and download PDF synchronously
-        this.createInvoicePDF(invoiceData);
+        // 3. Auto-download PDF only on desktop.
+        // On iOS PWAs, doc.save() navigates away and can abort the background sync.
+        if (window.innerWidth > 768) {
+            this.createInvoicePDF(invoiceData);
+        } else {
+            // For mobile, we just moved them to History view, they can tap download there.
+            const msg = document.createElement('div');
+            msg.className = 'success-msg';
+            msg.style.position = 'fixed';
+            msg.style.bottom = '80px';
+            msg.style.left = '50%';
+            msg.style.transform = 'translateX(-50%)';
+            msg.style.zIndex = '9999';
+            msg.style.background = 'var(--primary-color)';
+            msg.style.color = 'white';
+            msg.style.padding = '12px 24px';
+            msg.style.borderRadius = '24px';
+            msg.innerText = 'Invoice saved to History!';
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
     },
 
     createInvoicePDF(invoice) {
@@ -1467,6 +1493,352 @@ const app = {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         return d.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    /* =========================================================
+       CLIENT TRACKER (Phase 3)
+       ========================================================= */
+
+    populateClientDropdowns() {
+        const select = document.getElementById('record-client-select');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- No linked profile (Manual Entry) --</option>';
+        const activeClients = this.clients.filter(c => c.status !== 'Completed');
+        activeClients.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.parentName} (${c.childName})`;
+            select.appendChild(opt);
+        });
+    },
+
+    onRecordClientSelect() {
+        const select = document.getElementById('record-client-select');
+        const clientId = select.value;
+        if (!clientId) return; // User chose manual entry, leave fields alone
+
+        const client = this.clients.find(c => c.id === clientId);
+        if (client) {
+            document.getElementById('record-client').value = client.parentName;
+            document.getElementById('record-child-name').value = client.childName;
+            document.getElementById('record-child-age').value = client.childAge || '';
+            
+            // Auto-select package as service if we can find a matching service name
+            const srvSelect = document.getElementById('record-service');
+            for (let i = 0; i < srvSelect.options.length; i++) {
+                if (srvSelect.options[i].text.includes(client.packageType)) {
+                    srvSelect.selectedIndex = i;
+                    this.autoFillServiceData(); // trigger pricing fill
+                    break;
+                }
+            }
+        }
+    },
+
+    populatePackageDropdown() {
+        const select = document.getElementById('client-package');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Select Package --</option>';
+        this.services.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name;
+            opt.textContent = s.name;
+            select.appendChild(opt);
+        });
+    },
+
+    openClientModal(clientId = null) {
+        document.getElementById('client-modal-title').innerText = clientId ? 'Edit Client' : 'Add Client';
+        document.getElementById('client-id').value = clientId || '';
+        if (clientId) {
+            const c = this.clients.find(x => x.id === clientId);
+            if (c) {
+                document.getElementById('client-parent').value = c.parentName;
+                document.getElementById('client-child').value = c.childName;
+                document.getElementById('client-age').value = c.childAge;
+                document.getElementById('client-status').value = c.status;
+                document.getElementById('client-package').value = c.packageType;
+                
+                // Format dates for input[type=date]
+                document.getElementById('client-start').value = c.startDate.split('T')[0];
+                document.getElementById('client-end').value = c.endDate.split('T')[0];
+                document.getElementById('client-goals').value = c.keyGoals;
+            }
+        } else {
+            document.getElementById('client-form').reset();
+            document.getElementById('client-status').value = 'Active';
+            // Default dates
+            const now = new Date();
+            document.getElementById('client-start').value = now.toISOString().split('T')[0];
+            now.setDate(now.getDate() + 14); // Default 2 week package
+            document.getElementById('client-end').value = now.toISOString().split('T')[0];
+        }
+        document.getElementById('client-modal-overlay').classList.remove('hidden');
+    },
+
+    async saveClient(e) {
+        e.preventDefault();
+        const client = {
+            id: document.getElementById('client-id').value || null,
+            parentName: document.getElementById('client-parent').value,
+            childName: document.getElementById('client-child').value,
+            childAge: document.getElementById('client-age').value,
+            status: document.getElementById('client-status').value,
+            packageType: document.getElementById('client-package').value,
+            startDate: new Date(document.getElementById('client-start').value).toISOString(),
+            endDate: new Date(document.getElementById('client-end').value).toISOString(),
+            keyGoals: document.getElementById('client-goals').value
+        };
+
+        const saved = await db.saveClient(client);
+        
+        this.clients = await db.getClients();
+        this.populateClientDropdowns();
+        this.renderClientsDashboard();
+        
+        // If we are looking at this client's profile, re-render it
+        if (document.getElementById('view-client-profile').classList.contains('active')) {
+            this.renderClientProfile(saved.id);
+        }
+        
+        this.closeModal('client-modal-overlay');
+    },
+
+    renderClientsDashboard() {
+        const grid = document.getElementById('clients-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const search = (document.getElementById('client-search')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('client-filter-status')?.value || 'Active';
+
+        let filtered = [...this.clients];
+        if (statusFilter !== 'All') {
+            filtered = filtered.filter(c => c.status === statusFilter);
+        }
+        if (search) {
+            filtered = filtered.filter(c => 
+                c.parentName.toLowerCase().includes(search) || 
+                c.childName.toLowerCase().includes(search)
+            );
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<p class="text-muted" style="grid-column: 1/-1;">No clients found.</p>';
+            return;
+        }
+
+        filtered.forEach(client => {
+            // Find latest interaction
+            const inters = this.interactions.filter(i => i.clientId === client.id);
+            inters.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latest = inters.length > 0 ? inters[0] : null;
+
+            // Date math
+            const end = new Date(client.endDate);
+            const now = new Date();
+            const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+            
+            let tagHtml = '';
+            if (client.status === 'Completed') {
+                tagHtml = '<span class="status-badge" style="background:#F3F4F6;color:#374151;">Completed</span>';
+            } else if (daysLeft <= 3 && daysLeft >= 0) {
+                tagHtml = `<span class="status-badge" style="background:#FEF3C7;color:#92400E;">🟡 ${daysLeft} days left</span>`;
+            } else if (daysLeft < 0) {
+                tagHtml = '<span class="status-badge" style="background:#FEE2E2;color:#991B1B;">🔴 Package Ended</span>';
+            } else {
+                tagHtml = '<span class="status-badge" style="background:#D1FAE5;color:#065F46;">🟢 Active</span>';
+            }
+
+            const card = document.createElement('div');
+            card.className = 'card client-card';
+            card.style.cursor = 'pointer';
+            card.onclick = () => {
+                this.renderClientProfile(client.id);
+                this.switchView('client-profile');
+            };
+
+            let previewHtml = '<p class="text-muted text-sm" style="font-style:italic;">No updates logged yet.</p>';
+            if (latest) {
+                const diffMs = new Date() - new Date(latest.date);
+                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                const timeStr = diffHrs < 24 ? (diffHrs === 0 ? 'Just now' : `${diffHrs}h ago`) : `${Math.floor(diffHrs/24)}d ago`;
+                previewHtml = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span class="badge ${latest.category.toLowerCase()}">${latest.category}</span>
+                        <span class="text-sm text-muted">${timeStr}</span>
+                    </div>
+                    <p class="text-sm line-clamp-2">${latest.notes}</p>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="card-header" style="margin-bottom:8px; border-bottom:none;">
+                    <h3 style="margin:0;">${client.parentName}</h3>
+                    ${tagHtml}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <p style="margin:0; font-weight:500;">Baby ${client.childName} <span class="text-muted">(${client.childAge})</span></p>
+                    <p class="text-sm text-muted" style="margin-top:4px;">
+                        <i data-lucide="package" style="width:14px;height:14px;vertical-align:middle;"></i> ${client.packageType}
+                    </p>
+                </div>
+                <div class="update-preview-box">
+                    ${previewHtml}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        lucide.createIcons();
+    },
+
+    renderClientProfile(clientId) {
+        const client = this.clients.find(c => c.id === clientId);
+        if (!client) return;
+
+        const container = document.getElementById('view-client-profile');
+        container.innerHTML = '';
+
+        const inters = this.interactions.filter(i => i.clientId === clientId);
+        inters.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Get matching unbilled records to power the "Invoice Client" feature
+        const unbilled = this.records.filter(r => !r.invoiced && r.client.toLowerCase().includes(client.parentName.toLowerCase().split(' ')[0]));
+        const invoiceBtn = unbilled.length > 0 
+            ? `<button class="btn btn-primary" onclick="app.generateTargetedInvoice('${client.id}', '${client.parentName}')" style="font-size:0.85rem;"><i data-lucide="file-text"></i> Invoice (${unbilled.length})</button>`
+            : ``;
+
+        let html = `
+            <header class="view-header flex-between mb-4">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="btn-icon" onclick="app.switchView('clients')" style="background:#F3F4F6; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;"><i data-lucide="arrow-left"></i></button>
+                    <div>
+                        <h1 style="margin:0;">${client.parentName} & ${client.childName}</h1>
+                        <p class="text-sm text-muted" style="margin:0;">${client.packageType} • ${client.childAge}</p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    ${invoiceBtn}
+                    <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
+                </div>
+            </header>
+
+            <div class="client-profile-layout">
+                <div class="client-main-col">
+                    <!-- Quick Add Update -->
+                    <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--primary-color);">
+                        <h4 style="margin-bottom:12px; font-size:1rem;">Log Update</h4>
+                        <form onsubmit="app.saveInteraction(event, '${client.id}')">
+                            <div class="form-row" style="margin-bottom:12px;">
+                                <div class="form-group" style="margin:0;">
+                                    <select id="new-interaction-category" required style="padding:8px;">
+                                        <option value="Advice">Advice Given</option>
+                                        <option value="Progress">Progress Update</option>
+                                        <option value="Issue">Issue / Roadblock</option>
+                                        <option value="Meeting">Meeting Notes</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <input type="datetime-local" id="new-interaction-date" required style="padding:8px;">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <textarea id="new-interaction-notes" required rows="3" placeholder="What was discussed or recommended?"></textarea>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="btn btn-primary" style="padding:6px 16px;">Log Update</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="timeline-container">
+                        ${inters.length === 0 ? '<p class="text-muted text-center" style="margin-top:40px;">No interactions logged yet.</p>' : ''}
+                        ${inters.map(i => {
+                            const d = new Date(i.date);
+                            const dateStr = d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            return `
+                                <div class="timeline-item">
+                                    <div class="timeline-dot ${i.category.toLowerCase()}"></div>
+                                    <div class="timeline-content card">
+                                        <div class="flex-between" style="margin-bottom:8px;">
+                                            <span class="badge ${i.category.toLowerCase()}">${i.category}</span>
+                                            <span class="text-sm text-muted">${dateStr}</span>
+                                        </div>
+                                        <p style="white-space:pre-wrap; margin:0;">${i.notes}</p>
+                                        <div class="text-right" style="margin-top:12px;">
+                                            <button class="btn-icon" onclick="app.deleteInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.5;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div class="client-side-col">
+                    <div class="card">
+                        <h4 style="margin-bottom:16px;">Package Details</h4>
+                        <p class="text-sm text-muted mb-2"><strong>Started:</strong> ${new Date(client.startDate).toLocaleDateString()}</p>
+                        <p class="text-sm text-muted mb-2"><strong>Ends:</strong> ${new Date(client.endDate).toLocaleDateString()}</p>
+                        <hr style="border:none; border-top:1px solid var(--border-color); margin:16px 0;">
+                        <h4 style="margin-bottom:8px;">Key Goals</h4>
+                        <p class="text-sm" style="white-space:pre-wrap;">${client.keyGoals || 'No goals specified.'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+        
+        // Default date for new interaction
+        setTimeout(() => {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const el = document.getElementById('new-interaction-date');
+            if (el) el.value = now.toISOString().slice(0, 16);
+        }, 10);
+
+        lucide.createIcons();
+    },
+
+    async saveInteraction(e, clientId) {
+        e.preventDefault();
+        const inter = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+            clientId: clientId,
+            date: new Date(document.getElementById('new-interaction-date').value).toISOString(),
+            category: document.getElementById('new-interaction-category').value,
+            notes: document.getElementById('new-interaction-notes').value,
+            author: 'Me'
+        };
+
+        // Optimistic UI
+        this.interactions.unshift(inter);
+        this.renderClientProfile(clientId);
+
+        await db.saveInteraction(inter);
+    },
+
+    async deleteInteraction(id, clientId) {
+        if (!confirm("Delete this update?")) return;
+        this.interactions = this.interactions.filter(i => i.id !== id);
+        this.renderClientProfile(clientId);
+        await db.deleteInteraction(id);
+    },
+
+    generateTargetedInvoice(clientId, clientName) {
+        // Find unbilled records matching this client's name broadly
+        const unbilled = this.records.filter(r => !r.invoiced && r.client.toLowerCase().includes(clientName.toLowerCase().split(' ')[0]));
+        if (unbilled.length === 0) return alert("No unbilled records found for this client.");
+        
+        this.invoiceSelection.clear();
+        unbilled.forEach(r => this.invoiceSelection.add(r.id));
+        this.switchView('invoices');
+        
+        // Scroll down to the builder area automatically
+        setTimeout(() => {
+            const el = document.getElementById('billing-history-body');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
     }
 };
 

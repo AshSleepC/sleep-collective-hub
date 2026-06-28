@@ -229,14 +229,119 @@ const db = {
         await _supabase.from('invoices').delete().eq('id', id);
     },
 
+    /* ── Clients ─────────────────────────────── */
+
+    async getClients() {
+        const user = await this.getUser();
+        if (!user) return [];
+
+        const { data, error } = await _supabase
+            .from('clients')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) { console.error(error); return []; }
+        return (data || []).map(c => ({
+            id:          c.id,
+            parentName:  c.parent_name,
+            childName:   c.child_name,
+            childAge:    c.child_age,
+            packageType: c.package_type,
+            startDate:   c.start_date,
+            endDate:     c.end_date,
+            status:      c.status,
+            keyGoals:    c.key_goals,
+            createdAt:   c.created_at
+        }));
+    },
+
+    async saveClient(client) {
+        const user = await this.getUser();
+        if (!user) return;
+
+        const { data, error } = await _supabase.from('clients').upsert({
+            id:           client.id,
+            user_id:      user.id,
+            parent_name:  client.parentName,
+            child_name:   client.childName,
+            child_age:    client.childAge,
+            package_type: client.packageType,
+            start_date:   client.startDate,
+            end_date:     client.endDate,
+            status:       client.status || 'Active',
+            key_goals:    client.keyGoals || '',
+            created_at:   client.createdAt || new Date().toISOString()
+        }, { onConflict: 'id' }).select();
+        
+        if (error) console.error(error);
+        return data ? data[0] : null;
+    },
+
+    async deleteClient(id) {
+        await _supabase.from('clients').delete().eq('id', id);
+        // Also delete associated interactions
+        await _supabase.from('interactions').delete().eq('client_id', id);
+    },
+
+    /* ── Interactions ────────────────────────── */
+
+    async getInteractions(clientId = null) {
+        const user = await this.getUser();
+        if (!user) return [];
+
+        let query = _supabase
+            .from('interactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false });
+            
+        if (clientId) {
+            query = query.eq('client_id', clientId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) { console.error(error); return []; }
+        return (data || []).map(i => ({
+            id:       i.id,
+            clientId: i.client_id,
+            date:     i.date,
+            category: i.category,
+            notes:    i.notes,
+            author:   i.author
+        }));
+    },
+
+    async saveInteraction(interaction) {
+        const user = await this.getUser();
+        if (!user) return;
+
+        await _supabase.from('interactions').upsert({
+            id:        interaction.id,
+            user_id:   user.id,
+            client_id: interaction.clientId,
+            date:      interaction.date,
+            category:  interaction.category,
+            notes:     interaction.notes,
+            author:    interaction.author || 'Me'
+        }, { onConflict: 'id' });
+    },
+
+    async deleteInteraction(id) {
+        await _supabase.from('interactions').delete().eq('id', id);
+    },
+
     /* ── Export (local backup download) ─────── */
 
     async exportData() {
         const data = {
-            settings: await this.getSettings(),
-            services: await this.getServices(),
-            records:  await this.getRecords(),
-            invoices: await this.getInvoices(),
+            settings:     await this.getSettings(),
+            services:     await this.getServices(),
+            clients:      await this.getClients(),
+            records:      await this.getRecords(),
+            invoices:     await this.getInvoices(),
+            interactions: await this.getInteractions(),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
@@ -252,10 +357,12 @@ const db = {
     async importData(jsonData) {
         try {
             const data = JSON.parse(jsonData);
-            if (data.settings) await this.saveSettings(data.settings);
-            if (data.services) for (const s of data.services) await this.saveService(s);
-            if (data.records)  for (const r of data.records)  await this.saveRecord(r);
-            if (data.invoices) for (const i of data.invoices) await this.saveInvoice(i);
+            if (data.settings)     await this.saveSettings(data.settings);
+            if (data.services)     for (const s of data.services)     await this.saveService(s);
+            if (data.clients)      for (const c of data.clients)      await this.saveClient(c);
+            if (data.records)      for (const r of data.records)      await this.saveRecord(r);
+            if (data.invoices)     for (const i of data.invoices)     await this.saveInvoice(i);
+            if (data.interactions) for (const x of data.interactions) await this.saveInteraction(x);
             return true;
         } catch (e) {
             console.error('Import failed', e);

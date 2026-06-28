@@ -61,6 +61,9 @@
             <button class="nav-btn" data-view="records">
                 <i data-lucide="list-todo"></i> Service Records
             </button>
+            <button class="nav-btn" data-view="clients">
+                <i data-lucide="users"></i> Client Tracker
+            </button>
             <button class="nav-btn" data-view="invoices">
                 <i data-lucide="file-text"></i> Invoice Generator
             </button>
@@ -160,7 +163,7 @@
             </header>
             
             <!-- Filters for Service Records - collapsible -->
-            <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
                 <button class="btn btn-outline" id="filter-toggle-btn" onclick="app.toggleRecordFilter()" style="font-size:0.85rem; padding:8px 14px; height:auto;">
                     <i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i> Filter &amp; Sort
                 </button>
@@ -203,6 +206,41 @@
             <div id="records-cards-container-archived" class="records-cards-list">
                 <!-- Filled by JS -->
             </div>
+        </div>
+
+        <div id="view-clients" class="view hidden">
+            <header class="view-header flex-between">
+                <div>
+                    <h1>Client Tracker</h1>
+                    <p>Manage active packages, goals, and interaction history.</p>
+                </div>
+                <button class="btn btn-primary" onclick="app.openClientModal()">
+                    <i data-lucide="user-plus"></i> Add Client
+                </button>
+            </header>
+            
+            <div class="card mb-4" style="padding: 1rem;">
+                <div class="flex-between" style="gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                        <input type="text" id="client-search" placeholder="Search parent or child name..." oninput="app.renderClientsDashboard()">
+                    </div>
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                        <select id="client-filter-status" onchange="app.renderClientsDashboard()">
+                            <option value="Active">Active Clients</option>
+                            <option value="Completed">Completed / Inactive</option>
+                            <option value="All">All Clients</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="clients-grid" class="clients-grid">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+        <div id="view-client-profile" class="view hidden">
+            <!-- Filled dynamically by app.js when a client is clicked -->
         </div>
 
         <div id="view-invoices" class="view hidden">
@@ -448,8 +486,16 @@
                     <label>Date</label>
                     <input type="date" id="record-date" required>
                 </div>
+                
                 <div class="form-group">
-                    <label>Client</label>
+                    <label>Client Profile (Optional)</label>
+                    <select id="record-client-select" onchange="app.onRecordClientSelect()">
+                        <option value="">-- No linked profile (Manual Entry) --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Client / Parent Name</label>
                     <input type="text" id="record-client" required placeholder="e.g. Jane Doe">
                 </div>
                 <div class="form-row">
@@ -545,7 +591,71 @@
     </div>
 </div>
 
+<div class="modal-overlay hidden" id="client-modal-overlay" onclick="event.target===this&&app.closeModal('client-modal-overlay')">
+    <div class="modal">
+        <div class="mobile-drag-handle"></div>
+        <div class="modal-header">
+            <h3 id="client-modal-title">Add Client</h3>
+            <button class="btn-icon" onclick="app.closeModal('client-modal-overlay')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="client-form" onsubmit="app.saveClient(event)">
+                <input type="hidden" id="client-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Parent Name(s)</label>
+                        <input type="text" id="client-parent" required placeholder="e.g. Sarah & Tom">
+                    </div>
+                    <div class="form-group">
+                        <label>Child's Name</label>
+                        <input type="text" id="client-child" required placeholder="e.g. Leo">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Child's Age (at start)</label>
+                        <input type="text" id="client-age" placeholder="e.g. 6 Months">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="client-status" required>
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Package Type (Links to Services)</label>
+                    <select id="client-package" required>
+                        <option value="">-- Select Package --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="client-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="client-end" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Key Goals / Notes</label>
+                    <textarea id="client-goals" rows="2" placeholder="e.g. Reduce night wakings, transition to cot..."></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="app.closeModal('client-modal-overlay')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- JS -->
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="supabase-config.js"></script>
 <script src="db.js"></script>
 <script src="app.js"></script>
