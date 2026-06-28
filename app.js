@@ -203,6 +203,9 @@ const app = {
 
     async saveService(e) {
         e.preventDefault();
+        if (this._isSavingService) return;
+        this._isSavingService = true;
+
         const service = {
             id: document.getElementById('service-id').value || null,
             name: document.getElementById('service-name').value,
@@ -212,6 +215,7 @@ const app = {
         await db.saveService(service);
         await this.loadData();
         this.closeModal('service-modal-overlay');
+        this._isSavingService = false;
     },
 
     async deleteService(id) {
@@ -315,6 +319,9 @@ const app = {
 
     async saveRecord(e) {
         e.preventDefault();
+        if (this._isSavingRecord) return;
+        this._isSavingRecord = true;
+
         const record = {
             id: document.getElementById('record-id').value || null,
             date: document.getElementById('record-date').value,
@@ -361,6 +368,7 @@ const app = {
         this.updateDashboard();
         this.renderRecordsTable();
         lucide.createIcons();
+        this._isSavingRecord = false;
     },
 
     async deleteRecord(id) {
@@ -981,18 +989,27 @@ const app = {
             recordIds: selectedIds
         };
 
-        // ── Save to cloud FIRST before PDF ──────────────────────────
-        // On iOS Safari, triggering a download interrupts JS execution,
-        // so cloud saves must complete before the PDF is generated.
-        await db.saveInvoice(invoiceData);
-        await db.markRecordsInvoiced(selectedIds);
+        // 1. Optimistically update local state so UI reflects the change instantly
+        this.invoices.unshift(invoiceData);
+        this.records.forEach(r => {
+            if (selectedIds.includes(r.id)) {
+                r.invoiced = true;
+                r.invoiceDate = invoiceData.date;
+            }
+        });
         this.invoiceSelection.clear();
-        await this.loadData();
-
-        // ── Now generate and download the PDF ───────────────────────
-        this.createInvoicePDF(invoiceData);
-
+        this.updateDashboard();
+        this.renderRecordsTable();
+        this.renderInvoiceHistoryTable();
         this.switchView('history');
+
+        // 2. Initiate cloud save WITHOUT awaiting, to retain user-gesture for iOS Safari PDF download
+        db.saveInvoice(invoiceData).then(() => {
+            return db.markRecordsInvoiced(selectedIds);
+        }).catch(err => console.error("Sync error:", err));
+
+        // 3. Generate and download PDF synchronously
+        this.createInvoicePDF(invoiceData);
     },
 
     createInvoicePDF(invoice) {

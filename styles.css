@@ -373,6 +373,9 @@ input:focus, select:focus {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   padding: 32px;
   animation: modalEnter 0.25s ease-out;
+  /* Prevent modal from overflowing off the screen on desktop */
+  max-height: 90vh;
+  overflow-y: auto;
 }
 @keyframes modalEnter {
   from { opacity: 0; transform: scale(0.95); }
