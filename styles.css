@@ -400,6 +400,10 @@ input:focus, select:focus {
 .mt-4 { margin-top: 24px; }
 .mt-2 { margin-top: 12px; }
 .text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 0.875rem; }
+.mb-4 { margin-bottom: 1rem; }
 
 .calc-preview {
   background-color: var(--bg-color);
@@ -1104,6 +1108,27 @@ input:focus, select:focus {
     width: 100% !important;
   }
 
+  /* Stack form rows vertically in modals on mobile */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Services table: compact card padding */
+  #view-services .card {
+    padding: 8px;
+  }
+  #view-services .data-table th,
+  #view-services .data-table td {
+    padding: 10px 8px;
+    font-size: 0.9rem;
+  }
+
+  /* Invoice page: centre the month navigator */
+  .billing-month-nav {
+    justify-content: center;
+  }
+
   /* Billing nav wrap nicely */
   .billing-nav {
     flex-wrap: wrap;
@@ -1141,8 +1166,12 @@ input:focus, select:focus {
     max-width: 100%;
     margin: 0;
     border-radius: 24px 24px 0 0;
-    padding: 32px 24px max(32px, env(safe-area-inset-bottom));
+    padding: 24px 20px max(24px, env(safe-area-inset-bottom));
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Cap height and make it scroll so form never goes off top of screen */
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   @keyframes slideUp {
     from { transform: translateY(100%); }

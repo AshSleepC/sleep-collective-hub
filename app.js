@@ -1404,6 +1404,22 @@ const app = {
         return { basePrice: price, effectivePrice, feeAmt, grossPay, netPay, superAmt, discountCodeApplied };
     },
 
+    toggleRecordFilter() {
+        const panel = document.getElementById('records-filter-panel');
+        const btn = document.getElementById('filter-toggle-btn');
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            btn.style.background = 'var(--primary-color)';
+            btn.style.color = '#fff';
+            btn.style.borderColor = 'var(--primary-color)';
+        } else {
+            panel.classList.add('hidden');
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }
+    },
+
     closeModal(id) {
         document.getElementById(id).classList.add('hidden');
     },

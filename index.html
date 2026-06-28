@@ -159,8 +159,13 @@
                 </button>
             </header>
             
-            <!-- Filters for Service Records -->
-            <div class="card mb-4" style="padding: 1rem;">
+            <!-- Filters for Service Records - collapsible -->
+            <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:12px;">
+                <button class="btn btn-outline" id="filter-toggle-btn" onclick="app.toggleRecordFilter()" style="font-size:0.85rem; padding:8px 14px; height:auto;">
+                    <i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i> Filter &amp; Sort
+                </button>
+            </div>
+            <div id="records-filter-panel" class="card mb-4 hidden" style="padding: 1rem;">
                 <div class="flex-between" style="gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
                     <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
                         <label style="font-size: 0.8rem;">Sort by Date</label>
@@ -324,7 +329,7 @@
                     <p class="text-muted text-sm mb-4">These details will automatically be printed on generated PDFs.</p>
                     <div class="form-group">
                         <label>Provider Details (Your Name & ABN)</label>
-                        <textarea id="setting-provider-details" rows="3" placeholder="Ashley Gould&#10;ABN: 12 345 678 900&#10;The Sleep Collective Hub"></textarea>
+                        <textarea id="setting-provider-details" rows="3" placeholder="Ashlea Gould&#10;ABN: 12 345 678 900&#10;The Sleep Collective Hub"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Bank Details (BSB & Account)</label>
@@ -341,7 +346,7 @@
                 <div class="card">
                     <h3>Data Backup</h3>
                     <p>Your data is securely stored in this browser. However, to ensure you never lose it, export a backup file regularly.</p>
-                    <div class="action-buttons mt-4">
+                    <div class="action-buttons mt-4" style="display:flex; flex-direction:column; gap:12px;">
                         <button class="btn btn-outline" onclick="app.exportDatabase()">
                             <i data-lucide="download"></i> Export Data (.json)
                         </button>
