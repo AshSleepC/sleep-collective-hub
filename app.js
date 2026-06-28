@@ -1493,7 +1493,7 @@ const app = {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         return d.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
-    }
+    },
     /* =========================================================
        CLIENT TRACKER (Phase 3)
        ========================================================= */
@@ -1701,12 +1701,6 @@ const app = {
         const inters = this.interactions.filter(i => i.clientId === clientId);
         inters.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Get matching unbilled records to power the "Invoice Client" feature
-        const unbilled = this.records.filter(r => !r.invoiced && r.client.toLowerCase().includes(client.parentName.toLowerCase().split(' ')[0]));
-        const invoiceBtn = unbilled.length > 0 
-            ? `<button class="btn btn-primary" onclick="app.generateTargetedInvoice('${client.id}', '${client.parentName}')" style="font-size:0.85rem;"><i data-lucide="file-text"></i> Invoice (${unbilled.length})</button>`
-            : ``;
-
         let html = `
             <header class="view-header flex-between mb-4">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -1717,7 +1711,6 @@ const app = {
                     </div>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    ${invoiceBtn}
                     <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
                 </div>
             </header>
@@ -1823,22 +1816,6 @@ const app = {
         this.interactions = this.interactions.filter(i => i.id !== id);
         this.renderClientProfile(clientId);
         await db.deleteInteraction(id);
-    },
-
-    generateTargetedInvoice(clientId, clientName) {
-        // Find unbilled records matching this client's name broadly
-        const unbilled = this.records.filter(r => !r.invoiced && r.client.toLowerCase().includes(clientName.toLowerCase().split(' ')[0]));
-        if (unbilled.length === 0) return alert("No unbilled records found for this client.");
-        
-        this.invoiceSelection.clear();
-        unbilled.forEach(r => this.invoiceSelection.add(r.id));
-        this.switchView('invoices');
-        
-        // Scroll down to the builder area automatically
-        setTimeout(() => {
-            const el = document.getElementById('billing-history-body');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 300);
     }
 };
 
