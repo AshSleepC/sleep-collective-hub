@@ -1,3 +1,15 @@
+var window = { innerWidth: 1000, jspdf: {} };
+var document = { 
+    getElementById: function() { return { value: '', classList: { add: function(){}, remove: function(){} }, style: {}, innerHTML: '', addEventListener: function(){} }; },
+    querySelectorAll: function() { return []; },
+    createElement: function() { return { classList: { add: function(){}, remove: function(){} }, style: {}, innerHTML: '', appendChild: function(){} }; },
+    addEventListener: function() {}
+};
+var crypto = { randomUUID: function() { return '123'; } };
+var _supabase = { auth: { getSession: async function(){ return {data:{session:null}}; }, onAuthStateChange: function(){} } };
+var lucide = { createIcons: function(){} };
+var db = { init: async function(){}, getSettings: async function(){ return {}; }, getServices: async function(){ return []; }, getClients: async function(){ return []; }, getInteractions: async function(){ return []; }, getRecords: async function(){ return []; }, getInvoices: async function(){ return []; } };
+
 const app = {
     settings: {},
     services: [],
@@ -1699,14 +1711,7 @@ const app = {
         container.innerHTML = '';
 
         const inters = this.interactions.filter(i => i.clientId === clientId);
-        inters.sort((a, b) => {
-            if (a.isPinned && !b.isPinned) return -1;
-            if (!a.isPinned && b.isPinned) return 1;
-            return new Date(b.date) - new Date(a.date);
-        });
-
-        const calls = inters.filter(i => i.category.includes('Call') || i.category.includes('Consult'));
-        const tallyHtml = `<div class="badge" style="background:var(--primary-color);color:white;margin-top:4px;">Calls Logged: ${calls.length}</div>`;
+        inters.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         let html = `
             <header class="view-header flex-between mb-4">
@@ -1715,7 +1720,6 @@ const app = {
                     <div>
                         <h1 style="margin:0;">${client.parentName} & ${client.childName}</h1>
                         <p class="text-sm text-muted" style="margin:0;">${client.packageType} • ${client.childAge}</p>
-                        ${tallyHtml}
                     </div>
                 </div>
                 <div style="display:flex; gap:8px;">
@@ -1732,12 +1736,10 @@ const app = {
                             <div class="form-row" style="margin-bottom:12px;">
                                 <div class="form-group" style="margin:0;">
                                     <select id="new-interaction-category" required style="padding:8px;">
-                                        <option value="15-Min Call">15-Min Call</option>
-                                        <option value="30-Min Consult">30-Min Consult</option>
-                                        <option value="Rested App Support">Rested App Support</option>
-                                        <option value="Advice Given">Advice Given</option>
-                                        <option value="Progress Update">Progress Update</option>
+                                        <option value="Advice">Advice Given</option>
+                                        <option value="Progress">Progress Update</option>
                                         <option value="Issue">Issue / Roadblock</option>
+                                        <option value="Meeting">Meeting Notes</option>
                                     </select>
                                 </div>
                                 <div class="form-group" style="margin:0;">
@@ -1761,22 +1763,15 @@ const app = {
                             const dateStr = d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             return `
                                 <div class="timeline-item">
-                                    <div class="timeline-dot ${i.category.toLowerCase().replace(/ /g, '-')}"></div>
-                                    <div class="timeline-content card ${i.isPinned ? 'pinned-note' : ''}" style="${i.isPinned ? 'border: 2px solid #FCD34D; background: #FFFBEB;' : ''}">
+                                    <div class="timeline-dot ${i.category.toLowerCase()}"></div>
+                                    <div class="timeline-content card">
                                         <div class="flex-between" style="margin-bottom:8px;">
-                                            <span class="badge ${i.category.toLowerCase().replace(/ /g, '-')}">
-                                                ${i.isPinned ? '📌 ' : ''}${i.category}
-                                            </span>
+                                            <span class="badge ${i.category.toLowerCase()}">${i.category}</span>
                                             <span class="text-sm text-muted">${dateStr}</span>
                                         </div>
                                         <p style="white-space:pre-wrap; margin:0;">${i.notes}</p>
                                         <div class="text-right" style="margin-top:12px;">
-                                            <button class="btn-icon" onclick="app.togglePinInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.8; margin-right:8px;" title="Pin Note">
-                                                <i data-lucide="pin" style="width:14px;height:14px; ${i.isPinned ? 'fill:var(--text-muted);' : ''}"></i>
-                                            </button>
-                                            <button class="btn-icon" onclick="app.deleteInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.5;" title="Delete">
-                                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                                            </button>
+                                            <button class="btn-icon" onclick="app.deleteInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.5;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                                         </div>
                                     </div>
                                 </div>
@@ -1818,7 +1813,6 @@ const app = {
             date: new Date(document.getElementById('new-interaction-date').value).toISOString(),
             category: document.getElementById('new-interaction-category').value,
             notes: document.getElementById('new-interaction-notes').value,
-            isPinned: false,
             author: 'Me'
         };
 
@@ -1834,17 +1828,6 @@ const app = {
         this.interactions = this.interactions.filter(i => i.id !== id);
         this.renderClientProfile(clientId);
         await db.deleteInteraction(id);
-    },
-
-    async togglePinInteraction(id, clientId) {
-        const inter = this.interactions.find(i => i.id === id);
-        if (!inter) return;
-        inter.isPinned = !inter.isPinned;
-        
-        // Optimistic UI update
-        this.renderClientProfile(clientId);
-        
-        await db.saveInteraction(inter);
     }
 };
 
