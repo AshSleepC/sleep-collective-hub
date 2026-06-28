@@ -28,6 +28,7 @@ const app = {
 
         if (!session) {
             // No user — show login
+            document.getElementById('loading-screen').classList.add('hidden');
             loginScreen.classList.remove('hidden');
             appContainer.style.display = 'none';
             return;
@@ -67,6 +68,9 @@ const app = {
     async _initApp() {
         await db.init();
         await this.loadData();
+
+        // Data loaded! Hide the loading screen
+        document.getElementById('loading-screen').classList.add('hidden');
 
         // Setup Nav
         document.querySelectorAll('.nav-btn').forEach(btn => {

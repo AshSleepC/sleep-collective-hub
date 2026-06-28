@@ -32,6 +32,14 @@
 </head>
 <body>
 
+<!-- ── Loading Screen ──────────────────────────────────── -->
+<div id="loading-screen" class="login-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+    <div style="animation: pulse 1.5s infinite; display:flex; flex-direction:column; align-items:center;">
+        <img src="icons/icon-192.png" alt="Loading..." style="width:72px;height:72px;border-radius:16px;">
+        <p style="margin-top:16px; color:var(--text-muted); font-weight:500;">Loading Hub...</p>
+    </div>
+</div>
+
 <!-- ── Login Screen ──────────────────────────────────── -->
 <div id="login-screen" class="login-screen hidden">
     <div class="login-card">
@@ -659,9 +667,21 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
-    // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(console.error);
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('SW Registered');
+        }).catch(err => {
+            console.error('SW Error', err);
+        });
+
+        // Automatically reload the page when a new service worker takes over
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
     }
 </script>
 </body>
