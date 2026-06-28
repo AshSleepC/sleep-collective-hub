@@ -1,13 +1,12 @@
 /* sw.js — Service Worker for PWA offline shell */
 const CACHE = 'sleep-hub-v1';
 const SHELL = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/db.js',
-  '/supabase-config.js',
-  '/manifest.json',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './db.js',
+  './supabase-config.js',
+  './manifest.json',
 ];
 
 self.addEventListener('install', e => {
