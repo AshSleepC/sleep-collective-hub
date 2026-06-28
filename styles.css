@@ -1270,3 +1270,103 @@ input:focus, select:focus {
   width: 24px;
   height: 24px;
 }
+
+/* =========================================================
+   CLIENT TRACKER (Phase 3)
+   ========================================================= */
+
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.client-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.client-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--secondary-color);
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.update-preview-box {
+  background: var(--bg-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: auto;
+}
+
+.client-profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .client-profile-layout {
+    grid-template-columns: 1fr;
+  }
+  .client-side-col {
+    order: -1;
+  }
+}
+
+/* Timeline */
+.timeline-container {
+  position: relative;
+  padding-left: 24px;
+  margin-top: 32px;
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -24px;
+  top: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-color);
+  border: 2px solid var(--surface-color);
+  box-shadow: 0 0 0 2px var(--bg-color);
+  z-index: 1;
+}
+
+.timeline-dot.advice-given, .badge.advice-given { background: #E0E7FF; color: #3730A3; }
+.timeline-dot.progress-update, .badge.progress-update { background: #D1FAE5; color: #065F46; }
+.timeline-dot.issue---roadblock, .badge.issue---roadblock { background: #FEE2E2; color: #991B1B; }
+.timeline-dot.meeting-notes, .badge.meeting-notes { background: #FEF3C7; color: #92400E; }
+.timeline-dot.15-min-call, .badge.15-min-call { background: #FCE7F3; color: #9D174D; }
+.timeline-dot.30-min-consult, .badge.30-min-consult { background: #E0E7FF; color: #3730A3; }
+.timeline-dot.rested-app-support, .badge.rested-app-support { background: #CFFAFE; color: #155E75; }
+
+.pinned-note {
+  box-shadow: 0 4px 6px -1px rgba(252, 211, 77, 0.2), 0 2px 4px -1px rgba(252, 211, 77, 0.1);
+}

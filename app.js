@@ -8,6 +8,11 @@ const app = {
     invoiceSelection: new Set(),
 
     async init() {
+        if (window.location.search.includes('beta=true')) {
+            const btn = document.getElementById('nav-btn-clients');
+            if (btn) btn.style.display = '';
+        }
+
         // ── Auth state management ──────────────────
         const { data: { session } } = await _supabase.auth.getSession();
         this._handleAuthState(session);
@@ -1641,7 +1646,7 @@ const app = {
             let tagHtml = '';
             if (client.status === 'Completed') {
                 tagHtml = '<span class="status-badge" style="background:#F3F4F6;color:#374151;">Completed</span>';
-            } else if (daysLeft <= 3 && daysLeft >= 0) {
+            } else if (daysLeft <= 2 && daysLeft >= 0) {
                 tagHtml = `<span class="status-badge" style="background:#FEF3C7;color:#92400E;">🟡 ${daysLeft} days left</span>`;
             } else if (daysLeft < 0) {
                 tagHtml = '<span class="status-badge" style="background:#FEE2E2;color:#991B1B;">🔴 Package Ended</span>';
