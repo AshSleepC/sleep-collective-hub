@@ -981,13 +981,17 @@ const app = {
             recordIds: selectedIds
         };
 
-        this.createInvoicePDF(invoiceData);
-
-        // Automatically mark as invoiced and save to history
+        // ── Save to cloud FIRST before PDF ──────────────────────────
+        // On iOS Safari, triggering a download interrupts JS execution,
+        // so cloud saves must complete before the PDF is generated.
         await db.saveInvoice(invoiceData);
         await db.markRecordsInvoiced(selectedIds);
         this.invoiceSelection.clear();
         await this.loadData();
+
+        // ── Now generate and download the PDF ───────────────────────
+        this.createInvoicePDF(invoiceData);
+
         this.switchView('history');
     },
 
