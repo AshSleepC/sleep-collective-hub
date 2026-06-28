@@ -429,8 +429,9 @@
 </div>
 
 <!-- Modals -->
-<div class="modal-overlay hidden" id="record-modal-overlay">
+<div class="modal-overlay hidden" id="record-modal-overlay" onclick="event.target===this&&app.closeModal('record-modal-overlay')">
     <div class="modal">
+        <div class="mobile-drag-handle"></div>
         <div class="modal-header">
             <h3 id="record-modal-title">Add Record</h3>
             <button class="btn-icon" onclick="app.closeModal('record-modal-overlay')"><i data-lucide="x"></i></button>
@@ -496,8 +497,9 @@
     </div>
 </div>
 
-<div class="modal-overlay hidden" id="service-modal-overlay">
+<div class="modal-overlay hidden" id="service-modal-overlay" onclick="event.target===this&&app.closeModal('service-modal-overlay')">
     <div class="modal">
+        <div class="mobile-drag-handle"></div>
         <div class="modal-header">
             <h3 id="service-modal-title">Add Service</h3>
             <button class="btn-icon" onclick="app.closeModal('service-modal-overlay')"><i data-lucide="x"></i></button>
@@ -522,8 +524,9 @@
     </div>
 </div>
 
-<div class="modal-overlay hidden" id="confirm-modal-overlay">
+<div class="modal-overlay hidden" id="confirm-modal-overlay" onclick="event.target===this&&app.closeModal('confirm-modal-overlay')">
     <div class="modal" style="max-width: 400px; text-align: center;">
+        <div class="mobile-drag-handle"></div>
         <div class="modal-header" style="justify-content: center;">
             <h3 id="confirm-modal-title">Confirm Action</h3>
         </div>

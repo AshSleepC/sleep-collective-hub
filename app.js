@@ -1069,6 +1069,13 @@ const app = {
         const bankLines = doc.splitTextToSize(invoice.bankDetails, 80);
         doc.text(bankLines, 14, finalY + 5);
 
+        // Payment terms
+        const payY = finalY + 5 + (bankLines.length * 5) + 6;
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(130, 100, 80);
+        doc.setFontSize(9);
+        doc.text("Payment due within 14 days of the invoice date.", 14, payY);
+
         doc.save(`${invoice.id}_${invoice.dateStr.replace(/\//g,'-')}.pdf`);
     },
 
