@@ -1763,7 +1763,8 @@ const app = {
                                 <textarea id="new-interaction-notes" required rows="3" placeholder="What was discussed or recommended?"></textarea>
                             </div>
                             <div class="text-right">
-                                <button type="submit" class="btn btn-primary" style="padding:6px 16px;">Log Update</button>
+                                <button type="submit" id="btn-submit-interaction" class="btn btn-primary" style="padding:6px 16px;">Log Update</button>
+                                <button type="button" id="btn-cancel-edit-interaction" class="btn btn-secondary hidden" onclick="app.cancelEditInteraction()" style="padding:6px 16px; margin-left:8px;">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -1786,11 +1787,14 @@ const app = {
                                         </div>
                                         <p style="white-space:pre-wrap; margin:0;">${i.notes}</p>
                                         <div class="text-right" style="margin-top:12px;">
-                                            <button class="btn-icon" onclick="app.togglePinInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.8; margin-right:8px;" title="Pin Note">
-                                                <i data-lucide="pin" style="width:14px;height:14px; ${i.isPinned ? 'fill:var(--text-muted);' : ''}"></i>
+                                            <button class="btn-icon" onclick="app.togglePinInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.8; margin-right:12px; padding:4px;" title="Pin Note">
+                                                <i data-lucide="pin" style="width:16px;height:16px; ${i.isPinned ? 'fill:var(--text-muted);' : ''}"></i>
                                             </button>
-                                            <button class="btn-icon" onclick="app.deleteInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.5;" title="Delete">
-                                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                            <button class="btn-icon" onclick="app.editInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.8; margin-right:12px; padding:4px;" title="Edit Note">
+                                                <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                                            </button>
+                                            <button class="btn-icon" onclick="app.deleteInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.5; padding:4px;" title="Delete">
+                                                <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -1827,21 +1831,78 @@ const app = {
 
     async saveInteraction(e, clientId) {
         e.preventDefault();
+        
+        let id = null;
+        if (this._editingInteractionId) {
+            id = this._editingInteractionId;
+        } else {
+            id = 'inter-' + Date.now();
+        }
+
         const inter = {
-            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+            id: id,
             clientId: clientId,
-            date: new Date(document.getElementById('new-interaction-date').value).toISOString(),
+            date: document.getElementById('new-interaction-date').value,
             category: document.getElementById('new-interaction-category').value,
             notes: document.getElementById('new-interaction-notes').value,
-            isPinned: false,
-            author: 'Me'
+            isPinned: false
         };
 
-        // Optimistic UI
-        this.interactions.unshift(inter);
+        if (this._editingInteractionId) {
+            const existing = this.interactions.find(i => i.id === this._editingInteractionId);
+            if (existing) inter.isPinned = existing.isPinned;
+            
+            const idx = this.interactions.findIndex(i => i.id === this._editingInteractionId);
+            if (idx > -1) this.interactions[idx] = inter;
+        } else {
+            this.interactions.unshift(inter);
+        }
+
+        this._editingInteractionId = null;
         this.renderClientProfile(clientId);
 
         await db.saveInteraction(inter);
+    },
+
+    editInteraction(id, clientId) {
+        const inter = this.interactions.find(i => i.id === id);
+        if (!inter) return;
+
+        this._editingInteractionId = id;
+        
+        const dateInput = document.getElementById('new-interaction-date');
+        const categoryInput = document.getElementById('new-interaction-category');
+        const notesInput = document.getElementById('new-interaction-notes');
+        const submitBtn = document.getElementById('btn-submit-interaction');
+        const cancelBtn = document.getElementById('btn-cancel-edit-interaction');
+
+        if (dateInput) {
+            const d = new Date(inter.date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            dateInput.value = d.toISOString().slice(0, 16);
+        }
+        if (categoryInput) categoryInput.value = inter.category;
+        if (notesInput) notesInput.value = inter.notes;
+        
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Note';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-secondary');
+            submitBtn.style.background = 'var(--secondary-color)';
+            submitBtn.style.color = '#fff';
+        }
+        if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+        document.querySelector('.client-profile-layout').scrollIntoView({ behavior: 'smooth' });
+    },
+
+    cancelEditInteraction() {
+        this._editingInteractionId = null;
+        const container = document.querySelector('.client-profile-layout');
+        const clientId = container ? container.dataset.clientId : null;
+        if (clientId) {
+            this.renderClientProfile(clientId);
+        }
     },
 
     async deleteInteraction(id, clientId) {

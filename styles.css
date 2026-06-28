@@ -1276,6 +1276,13 @@ input:focus, select:focus {
   height: 24px;
 }
 
+@media (max-width: 768px) {
+  /* Prevent iOS zoom on inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* =========================================================
    CLIENT TRACKER (Phase 3)
    ========================================================= */
