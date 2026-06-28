@@ -1087,7 +1087,7 @@ input:focus, select:focus {
     padding: 16px;
     box-shadow: var(--shadow-sm);
   }
-  .data-table td {
+  .data-table td[data-label] {
     border: none;
     padding: 8px 0;
     position: relative;
@@ -1097,7 +1097,7 @@ input:focus, select:focus {
     justify-content: flex-end;
     align-items: center;
   }
-  .data-table td::before {
+  .data-table td[data-label]::before {
     content: attr(data-label);
     position: absolute;
     left: 0;
@@ -1106,6 +1106,13 @@ input:focus, select:focus {
     font-weight: 600;
     color: var(--text-muted);
     font-size: 0.85rem;
+  }
+  .data-table td:not([data-label]) {
+    border: none;
+    padding: 8px 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
   }
   
   /* 3. Show FAB */

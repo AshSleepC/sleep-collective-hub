@@ -325,7 +325,7 @@ const app = {
             price: document.getElementById('record-price').value,
             feePct: document.getElementById('record-fee-pct').value,
             discountCode: document.getElementById('record-discount-code') ? document.getElementById('record-discount-code').value : '',
-            invoiced: false, // Default
+            invoiced: false,
             invoiceDate: null
         };
 
@@ -337,15 +337,41 @@ const app = {
             }
         }
 
-        await db.saveRecord(record);
-        await this.loadData();
+        // Close modal instantly — don't make user wait
         this.closeModal('record-modal-overlay');
+
+        // Optimistically update local state
+        if (record.id) {
+            const idx = this.records.findIndex(r => r.id === record.id);
+            if (idx > -1) this.records[idx] = record;
+        } else {
+            // Temp ID until Supabase returns the real one
+            record._tempId = true;
+            record.id = 'temp-' + Date.now();
+            this.records.unshift(record);
+        }
+        this.updateDashboard();
+        this.renderRecordsTable();
+        lucide.createIcons();
+
+        // Sync to cloud in background
+        await db.saveRecord(record);
+        // Reload silently to get real ID and confirm sync
+        this.records = await db.getRecords();
+        this.updateDashboard();
+        this.renderRecordsTable();
+        lucide.createIcons();
     },
 
     async deleteRecord(id) {
         this.showConfirm("Are you sure you want to delete this record? This cannot be undone.", async () => {
+            // Optimistically remove from local state
+            this.records = this.records.filter(r => r.id !== id);
+            this.updateDashboard();
+            this.renderRecordsTable();
+            lucide.createIcons();
+            // Sync deletion to cloud
             await db.deleteRecord(id);
-            await this.loadData();
         });
     },
 
