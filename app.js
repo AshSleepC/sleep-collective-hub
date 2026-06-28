@@ -187,9 +187,13 @@ const app = {
         document.getElementById('dash-uninvoiced-count').innerText = uninvoicedCount;
         
         if (document.getElementById('dash-active-clients-card')) {
-            const activeCount = this.clients ? this.clients.filter(c => c.status === 'Active').length : 0;
-            document.getElementById('dash-active-clients').innerText = activeCount;
-            document.getElementById('dash-active-clients-card').style.display = 'flex';
+            if (window.location.search.includes('beta=true')) {
+                const activeCount = this.clients ? this.clients.filter(c => c.status === 'Active').length : 0;
+                document.getElementById('dash-active-clients').innerText = activeCount;
+                document.getElementById('dash-active-clients-card').style.display = 'flex';
+            } else {
+                document.getElementById('dash-active-clients-card').style.display = 'none';
+            }
         }
 
         // Render Recent Uninvoiced in Dashboard
