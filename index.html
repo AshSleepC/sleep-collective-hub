@@ -66,11 +66,11 @@
             <button class="nav-btn active" data-view="dashboard">
                 <i data-lucide="layout-dashboard"></i> Dashboard
             </button>
-            <button class="nav-btn" data-view="records">
-                <i data-lucide="list-todo"></i> Service Records
-            </button>
             <button class="nav-btn" id="nav-btn-clients" data-view="clients" style="display:none;">
                 <i data-lucide="users"></i> Client Tracker
+            </button>
+            <button class="nav-btn" data-view="records">
+                <i data-lucide="list-todo"></i> Service Records
             </button>
             <button class="nav-btn" data-view="invoices">
                 <i data-lucide="file-text"></i> Invoice Generator
@@ -134,6 +134,12 @@
                     <div class="stat-info">
                         <p>Uninvoiced Records</p>
                         <h3 id="dash-uninvoiced-count">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card success" id="dash-active-clients-card" style="display:none;">
+                    <div class="stat-info">
+                        <p>Active Clients</p>
+                        <h3 id="dash-active-clients">0</h3>
                     </div>
                 </div>
             </div>

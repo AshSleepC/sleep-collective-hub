@@ -184,6 +184,12 @@ const app = {
             document.getElementById('dash-earnings-fy').innerText = this.formatCurrency(fyEarnings);
         }
         document.getElementById('dash-uninvoiced-count').innerText = uninvoicedCount;
+        
+        if (document.getElementById('dash-active-clients-card')) {
+            const activeCount = this.clients ? this.clients.filter(c => c.status === 'Active').length : 0;
+            document.getElementById('dash-active-clients').innerText = activeCount;
+            document.getElementById('dash-active-clients-card').style.display = 'flex';
+        }
 
         // Render Recent Uninvoiced in Dashboard
         const tbody = document.getElementById('dash-recent-records');
