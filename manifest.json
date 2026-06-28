@@ -1,0 +1,24 @@
+{
+  "name": "The Sleep Collective Hub",
+  "short_name": "Sleep Hub",
+  "description": "Service records and invoicing for The Sleep Collective",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9F6F2",
+  "theme_color": "#3F3D56",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

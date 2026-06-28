@@ -6,15 +6,66 @@ const app = {
     invoiceSelection: new Set(),
 
     async init() {
+        // ── Auth state management ──────────────────
+        const { data: { session } } = await _supabase.auth.getSession();
+        this._handleAuthState(session);
+
+        _supabase.auth.onAuthStateChange((_event, session) => {
+            this._handleAuthState(session);
+        });
+    },
+
+    _handleAuthState(session) {
+        const loginScreen  = document.getElementById('login-screen');
+        const appContainer = document.getElementById('app-container');
+
+        if (!session) {
+            // No user — show login
+            loginScreen.classList.remove('hidden');
+            appContainer.style.display = 'none';
+            return;
+        }
+
+        // Signed in — show app
+        loginScreen.classList.add('hidden');
+        appContainer.style.display = '';
+
+        // Update sidebar user info
+        const user = session.user;
+        const name  = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+        const email = user.email || '';
+        const initial = name.charAt(0).toUpperCase();
+
+        const nameEl   = document.getElementById('sidebar-user-name');
+        const emailEl  = document.getElementById('sidebar-user-email');
+        const avatarEl = document.getElementById('sidebar-avatar');
+
+        if (nameEl)   nameEl.innerText  = name;
+        if (emailEl)  emailEl.innerText = email;
+        if (avatarEl) {
+            if (user.user_metadata?.avatar_url) {
+                avatarEl.innerHTML = `<img src="${user.user_metadata.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatarEl.innerText = initial;
+            }
+        }
+
+        // Only load data once
+        if (!this._appLoaded) {
+            this._appLoaded = true;
+            this._initApp();
+        }
+    },
+
+    async _initApp() {
         await db.init();
         await this.loadData();
-        
+
         // Setup Nav
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const view = e.currentTarget.dataset.view;
                 this.switchView(view);
-                // Update active state
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 e.currentTarget.classList.add('active');
             });
@@ -26,6 +77,7 @@ const app = {
         // Initialize icons
         lucide.createIcons();
     },
+
 
     async runAutoBackupCheck() {
         const lastBackup = this.settings.lastBackupDate;

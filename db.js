@@ -1,142 +1,265 @@
-/* db.js - Database layer encapsulating localforage */
+/* db.js — Supabase cloud database layer
+   Replaces localforage with Supabase PostgreSQL.
+   All data is scoped to the authenticated user (auth.uid()).
+*/
 const db = {
-    async init() {
-        localforage.config({
-            name: 'SleepCollectiveRecords'
+
+    /* ── Auth helpers ─────────────────────────── */
+
+    async getUser() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        return user;
+    },
+
+    async signInWithGoogle() {
+        const { error } = await _supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.href }
         });
-        // Ensure default settings
-        let settings = await localforage.getItem('settings');
-        if (!settings) {
-            await localforage.setItem('settings', { superRate: 12, feeRate: 30 });
-        }
-        
-        let services = await localforage.getItem('services');
-        if (!services) await localforage.setItem('services', []);
-        
-        let records = await localforage.getItem('records');
-        if (!records) await localforage.setItem('records', []);
-        
-        let invoices = await localforage.getItem('invoices');
-        if (!invoices) await localforage.setItem('invoices', []);
+        if (error) console.error('Google sign-in error:', error.message);
     },
 
-    // Settings
+    async signOut() {
+        await _supabase.auth.signOut();
+        window.location.reload();
+    },
+
+    /* ── Init ─────────────────────────────────── */
+
+    async init() {
+        // Auth session is managed by Supabase SDK — nothing extra needed
+    },
+
+    /* ── Settings ────────────────────────────── */
+
     async getSettings() {
-        return await localforage.getItem('settings');
+        const user = await this.getUser();
+        if (!user) return { superRate: 12, feeRate: 30 };
+
+        const { data, error } = await _supabase
+            .from('settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (error || !data) return { superRate: 12, feeRate: 30 };
+
+        return {
+            superRate:       data.super_rate      ?? 12,
+            feeRate:         data.fee_rate         ?? 30,
+            providerDetails: data.provider_details ?? '',
+            bankDetails:     data.bank_details     ?? '',
+            billedTo:        data.billed_to        ?? '',
+            lastBackupDate:  data.last_backup_date ?? null,
+        };
     },
+
     async saveSettings(settings) {
-        await localforage.setItem('settings', settings);
+        const user = await this.getUser();
+        if (!user) return;
+
+        await _supabase.from('settings').upsert({
+            user_id:          user.id,
+            super_rate:       settings.superRate       ?? 12,
+            fee_rate:         settings.feeRate          ?? 30,
+            provider_details: settings.providerDetails ?? '',
+            bank_details:     settings.bankDetails     ?? '',
+            billed_to:        settings.billedTo        ?? '',
+            last_backup_date: settings.lastBackupDate  ?? null,
+        }, { onConflict: 'user_id' });
     },
 
-    // Services
+    /* ── Services ────────────────────────────── */
+
     async getServices() {
-        return await localforage.getItem('services') || [];
+        const user = await this.getUser();
+        if (!user) return [];
+
+        const { data, error } = await _supabase
+            .from('services')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true });
+
+        if (error) { console.error(error); return []; }
+        return (data || []).map(s => ({
+            id:      s.id,
+            name:    s.name,
+            price:   s.price,
+            feePct:  s.fee_pct,
+        }));
     },
+
     async saveService(service) {
-        let services = await this.getServices();
+        const user = await this.getUser();
+        if (!user) return;
+
+        const row = {
+            user_id: user.id,
+            name:    service.name,
+            price:   service.price,
+            fee_pct: service.feePct ?? null,
+        };
+
         if (service.id) {
-            let index = services.findIndex(s => s.id === service.id);
-            if (index !== -1) services[index] = service;
-            else services.push(service);
+            await _supabase.from('services').upsert({ id: service.id, ...row }, { onConflict: 'id' });
         } else {
-            service.id = Date.now().toString();
-            services.push(service);
+            const { data } = await _supabase.from('services').insert(row).select().single();
+            service.id = data?.id;
         }
-        await localforage.setItem('services', services);
     },
+
     async deleteService(id) {
-        let services = await this.getServices();
-        services = services.filter(s => s.id !== id);
-        await localforage.setItem('services', services);
+        await _supabase.from('services').delete().eq('id', id);
     },
 
-    // Records
+    /* ── Records ─────────────────────────────── */
+
     async getRecords() {
-        let records = await localforage.getItem('records') || [];
-        // sort by date desc
-        records.sort((a,b) => new Date(b.date) - new Date(a.date));
-        return records;
+        const user = await this.getUser();
+        if (!user) return [];
+
+        const { data, error } = await _supabase
+            .from('records')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false });
+
+        if (error) { console.error(error); return []; }
+        return (data || []).map(r => ({
+            id:            r.id,
+            date:          r.date,
+            client:        r.client,
+            childName:     r.child_name   ?? '',
+            childAge:      r.child_age    ?? '',
+            serviceId:     r.service_id   ?? '',
+            price:         r.price,
+            feePct:        r.fee_pct,
+            discountCode:  r.discount_code ?? '',
+            invoiced:      r.invoiced      ?? false,
+            invoiceDate:   r.invoice_date  ?? null,
+        }));
     },
+
     async saveRecord(record) {
-        let records = await this.getRecords();
+        const user = await this.getUser();
+        if (!user) return;
+
+        const row = {
+            user_id:       user.id,
+            date:          record.date,
+            client:        record.client,
+            child_name:    record.childName    ?? '',
+            child_age:     record.childAge     ?? '',
+            service_id:    record.serviceId    ?? null,
+            price:         record.price,
+            fee_pct:       record.feePct       ?? null,
+            discount_code: record.discountCode ?? '',
+            invoiced:      record.invoiced     ?? false,
+            invoice_date:  record.invoiceDate  ?? null,
+        };
+
         if (record.id) {
-            let index = records.findIndex(r => r.id === record.id);
-            if (index !== -1) records[index] = record;
-            else records.push(record);
+            await _supabase.from('records').upsert({ id: record.id, ...row }, { onConflict: 'id' });
         } else {
-            record.id = Date.now().toString();
-            records.push(record);
+            const { data } = await _supabase.from('records').insert(row).select().single();
+            record.id = data?.id;
         }
-        await localforage.setItem('records', records);
     },
+
     async deleteRecord(id) {
-        let records = await this.getRecords();
-        records = records.filter(r => r.id !== id);
-        await localforage.setItem('records', records);
+        await _supabase.from('records').delete().eq('id', id);
     },
+
     async markRecordsInvoiced(ids) {
-        let records = await this.getRecords();
-        for (let r of records) {
-            if (ids.includes(r.id)) {
-                r.invoiced = true;
-                r.invoiceDate = new Date().toISOString();
-            }
-        }
-        await localforage.setItem('records', records);
+        if (!ids || ids.length === 0) return;
+        await _supabase
+            .from('records')
+            .update({ invoiced: true, invoice_date: new Date().toISOString() })
+            .in('id', ids);
     },
 
-    // Invoices
+    /* ── Invoices ────────────────────────────── */
+
     async getInvoices() {
-        let invoices = await localforage.getItem('invoices') || [];
-        invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
-        return invoices;
-    },
-    async saveInvoice(invoice) {
-        let invoices = await this.getInvoices();
-        if (invoice.id && invoices.some(i => i.id === invoice.id)) {
-            let index = invoices.findIndex(i => i.id === invoice.id);
-            invoices[index] = invoice;
-        } else {
-            if (!invoice.id) invoice.id = 'INV-' + Date.now().toString().slice(-6);
-            invoices.push(invoice);
-        }
-        await localforage.setItem('invoices', invoices);
-    },
-    async deleteInvoice(id) {
-        let invoices = await this.getInvoices();
-        invoices = invoices.filter(i => i.id !== id);
-        await localforage.setItem('invoices', invoices);
+        const user = await this.getUser();
+        if (!user) return [];
+
+        const { data, error } = await _supabase
+            .from('invoices')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false });
+
+        if (error) { console.error(error); return []; }
+        return (data || []).map(i => ({
+            id:              i.id,
+            date:            i.date,
+            dateStr:         i.date_str,
+            billingPeriod:   i.billing_period   ?? null,
+            providerDetails: i.provider_details ?? '',
+            bankDetails:     i.bank_details     ?? '',
+            billedTo:        i.billed_to        ?? '',
+            tableData:       i.table_data       ?? [],
+            summary:         i.summary          ?? {},
+            recordIds:       i.record_ids       ?? [],
+        }));
     },
 
-    // Export & Import Backup
+    async saveInvoice(invoice) {
+        const user = await this.getUser();
+        if (!user) return;
+
+        await _supabase.from('invoices').upsert({
+            id:               invoice.id,
+            user_id:          user.id,
+            date:             invoice.date,
+            date_str:         invoice.dateStr,
+            billing_period:   invoice.billingPeriod   ?? null,
+            provider_details: invoice.providerDetails ?? '',
+            bank_details:     invoice.bankDetails     ?? '',
+            billed_to:        invoice.billedTo        ?? '',
+            table_data:       invoice.tableData       ?? [],
+            summary:          invoice.summary         ?? {},
+            record_ids:       invoice.recordIds       ?? [],
+        }, { onConflict: 'id' });
+    },
+
+    async deleteInvoice(id) {
+        await _supabase.from('invoices').delete().eq('id', id);
+    },
+
+    /* ── Export (local backup download) ─────── */
+
     async exportData() {
         const data = {
             settings: await this.getSettings(),
             services: await this.getServices(),
-            records: await this.getRecords(),
-            invoices: await this.getInvoices()
+            records:  await this.getRecords(),
+            invoices: await this.getInvoices(),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
         a.download = `sleep-records-backup-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     },
+
     async importData(jsonData) {
         try {
             const data = JSON.parse(jsonData);
-            if (data.settings) await localforage.setItem('settings', data.settings);
-            if (data.services) await localforage.setItem('services', data.services);
-            if (data.records) await localforage.setItem('records', data.records);
-            if (data.invoices) await localforage.setItem('invoices', data.invoices);
+            if (data.settings) await this.saveSettings(data.settings);
+            if (data.services) for (const s of data.services) await this.saveService(s);
+            if (data.records)  for (const r of data.records)  await this.saveRecord(r);
+            if (data.invoices) for (const i of data.invoices) await this.saveInvoice(i);
             return true;
         } catch (e) {
-            console.error("Import failed", e);
+            console.error('Import failed', e);
             return false;
         }
-    }
+    },
 };
