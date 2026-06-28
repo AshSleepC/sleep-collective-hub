@@ -344,6 +344,8 @@ h1, h2, h3, h4 {
 }
 .btn-icon-text.edit { color: var(--secondary-color); }
 .btn-icon-text.edit:hover { color: var(--primary-color); background: var(--bg-color); }
+.btn-icon-text.delete { color: #EF4444; }
+.btn-icon-text.delete:hover { color: #DC2626; background: #FEF2F2; }
 
 /* Forms & Inputs */
 .form-group {

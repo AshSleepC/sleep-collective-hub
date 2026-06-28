@@ -1762,6 +1762,7 @@ const app = {
                 </div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
+                    <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')"><i data-lucide="trash-2"></i> Delete</button>
                 </div>
             </header>
 
@@ -1971,6 +1972,20 @@ const app = {
         this.interactions = this.interactions.filter(i => i.id !== id);
         this.renderClientProfile(clientId);
         await db.deleteInteraction(id);
+    },
+
+    async deleteClient(clientId) {
+        if (!confirm("Are you sure you want to delete this client? This will delete the client and all associated notes/interactions permanently.")) return;
+        
+        this.clients = this.clients.filter(c => c.id !== clientId);
+        this.interactions = this.interactions.filter(i => i.clientId !== clientId);
+        
+        this.populateClientDropdowns();
+        this.renderClientsDashboard();
+        this.updateDashboard();
+        this.switchView('clients');
+        
+        await db.deleteClient(clientId);
     },
 
     async togglePinInteraction(id, clientId) {
