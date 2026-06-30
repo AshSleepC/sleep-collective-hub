@@ -1325,10 +1325,7 @@ input:focus, select:focus, textarea:focus {
     gap: 8px;
   }
   
-  /* 3. Show FAB */
-  .fab-button {
-    display: flex !important;
-  }
+  /* FAB is now completely hidden on mobile per user request */
 }
 
 /* Floating Action Button (Hidden on Desktop) */
@@ -1702,5 +1699,16 @@ input:focus, select:focus, textarea:focus {
   /* Client profile header: stack cleanly */
   .client-profile-layout > .client-main-col > .card:first-child {
     padding: 16px;
+  }
+
+  /* Floating back button on mobile */
+  .mobile-floating-back {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 1000 !important;
+    background: var(--surface-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid var(--border-color) !important;
   }
 }

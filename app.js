@@ -2011,7 +2011,7 @@ const app = {
         let html = `
             <header class="view-header flex-between mb-4">
                 <div style="display:flex; align-items:center; gap:12px; width: 100%;">
-                    <button class="btn-icon" onclick="app.switchView('clients')" style="background:#F3F4F6; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;"><i data-lucide="arrow-left"></i></button>
+                    <button class="btn-icon mobile-floating-back" onclick="app.switchView('clients')" style="background:#F3F4F6; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;"><i data-lucide="arrow-left"></i></button>
                     <div style="flex:1;">
                         <h1 style="margin:0;">${client.parentName} & ${client.childName}</h1>
                         <p class="text-sm text-muted" style="margin:0;">${client.packageType} • ${client.childAge}</p>
