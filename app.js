@@ -1802,6 +1802,24 @@ const app = {
         }
     },
 
+    async toggleClientStatus(clientId) {
+        const client = this.clients.find(c => c.id === clientId);
+        if (!client) return;
+        
+        // Toggle status
+        client.status = client.status === 'Completed' ? 'Active' : 'Completed';
+        
+        // Optimistic update
+        if (document.getElementById('view-client-profile').classList.contains('active')) {
+            this.renderClientProfile(clientId, false); // Don't reset pagination
+        }
+        this.renderClientsDashboard();
+        
+        // Sync to cloud
+        await this._cloudSave('client', client);
+        this.showToast(`✓ Client marked as ${client.status}`);
+    },
+
     renderClientsDashboard() {
         const grid = document.getElementById('clients-grid');
         if (!grid) return;
@@ -1946,7 +1964,11 @@ const app = {
                         ${checklistHtml}
                     </div>
                 </div>
-                <div style="display:flex; gap:8px; align-self: flex-start;">
+                <div style="display:flex; gap:8px; align-self: flex-start; flex-wrap: wrap;">
+                    <button class="btn-icon-text ${client.status === 'Completed' ? 'completed' : 'primary'}" onclick="app.toggleClientStatus('${client.id}')" style="${client.status === 'Completed' ? 'background:#F3F4F6; color:#374151;' : ''}">
+                        <i data-lucide="${client.status === 'Completed' ? 'check-circle' : 'check'}"></i> 
+                        ${client.status === 'Completed' ? 'Completed' : 'Mark Complete'}
+                    </button>
                     <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
                     <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')"><i data-lucide="trash-2"></i> Delete</button>
                 </div>
@@ -1958,22 +1980,22 @@ const app = {
                     <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--primary-color);">
                         <h4 style="margin-bottom:12px; font-size:1rem;">Log Update</h4>
                         <div class="log-action-grid">
-                            <button type="button" class="btn-log-action primary" onclick="app.openLogPopup('15-Min Call', '${client.id}')">
+                            <button type="button" class="btn-log-action c-15-min-call" onclick="app.openLogPopup('15-Min Call', '${client.id}')">
                                 <i data-lucide="phone" style="width:16px;height:16px;"></i> 15 Min Support Call
                             </button>
-                            <button type="button" class="btn-log-action" onclick="app.logInstant('Sleep Plan Sent', '${client.id}')">
+                            <button type="button" class="btn-log-action c-sleep-plan-sent" onclick="app.logInstant('Sleep Plan Sent', '${client.id}')">
                                 <i data-lucide="send" style="width:16px;height:16px;"></i> Sleep Plan Sent
                             </button>
-                            <button type="button" class="btn-log-action" onclick="app.logInstant('Consult Notes Sent', '${client.id}')">
+                            <button type="button" class="btn-log-action c-consult-notes-sent" onclick="app.logInstant('Consult Notes Sent', '${client.id}')">
                                 <i data-lucide="file-text" style="width:16px;height:16px;"></i> Consult Notes Sent
                             </button>
-                            <button type="button" class="btn-log-action" onclick="app.logInstant('1 Hour Consult Complete', '${client.id}')">
+                            <button type="button" class="btn-log-action c-1-hour-consult-complete" onclick="app.logInstant('1 Hour Consult Complete', '${client.id}')">
                                 <i data-lucide="calendar" style="width:16px;height:16px;"></i> 1 Hour Consult Complete
                             </button>
-                            <button type="button" class="btn-log-action" onclick="app.logInstant('Off Boarding Email Sent', '${client.id}')">
+                            <button type="button" class="btn-log-action c-off-boarding-email-sent" onclick="app.logInstant('Off Boarding Email Sent', '${client.id}')">
                                 <i data-lucide="mail" style="width:16px;height:16px;"></i> Off Boarding Email Sent
                             </button>
-                            <button type="button" class="btn-log-action primary" onclick="app.openLogPopup('Client Notes', '${client.id}')">
+                            <button type="button" class="btn-log-action c-client-notes" onclick="app.openLogPopup('Client Notes', '${client.id}')">
                                 <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Client Notes
                             </button>
                         </div>

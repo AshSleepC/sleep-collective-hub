@@ -1492,29 +1492,25 @@ input:focus, select:focus, textarea:focus {
   gap: 8px;
   text-align: center;
   box-shadow: var(--shadow-sm);
+  height: 100%;
+  min-height: 56px;
 }
 .btn-log-action:hover {
-  border-color: var(--primary-color);
-  background: var(--bg-color);
   transform: translateY(-1px);
-}
-.btn-log-action.primary {
-  background: var(--primary-color);
-  color: #ffffff;
-  border-color: var(--primary-color);
-}
-.btn-log-action.primary:hover {
-  background: var(--secondary-color);
-  border-color: var(--secondary-color);
+  filter: brightness(0.97);
 }
 .btn-log-action:active {
   transform: scale(0.97);
   box-shadow: none;
 }
-.btn-log-action.primary:active {
-  transform: scale(0.97);
-  opacity: 0.9;
-}
+
+/* Color Variants (Matching Timeline) */
+.btn-log-action.c-15-min-call { background: #F3E8FF; color: #6B21A8; border-color: #E9D5FF; }
+.btn-log-action.c-sleep-plan-sent { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; }
+.btn-log-action.c-consult-notes-sent { background: #E0F2FE; color: #0369A1; border-color: #BAE6FD; }
+.btn-log-action.c-1-hour-consult-complete { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+.btn-log-action.c-off-boarding-email-sent { background: #F1F5F9; color: #475569; border-color: #CBD5E1; }
+.btn-log-action.c-client-notes { background: #FAFAF9; color: #44403C; border-color: #E7E5E4; }
 
 /* --- Toast Notifications --- */
 .toast-notification {
