@@ -10,11 +10,6 @@ const app = {
     _offlineQueue: [],  // Local queue for saves attempted while offline
 
     async init() {
-        if (window.location.search.includes('beta=true')) {
-            const btn = document.getElementById('nav-btn-clients');
-            if (btn) btn.style.display = '';
-        }
-
         // ── Auth state management ──────────────────
         const { data: { session } } = await _supabase.auth.getSession();
         this._handleAuthState(session);
@@ -2007,13 +2002,13 @@ const app = {
                         ${checklistHtml}
                     </div>
                 </div>
-                <div style="display:flex; gap:8px; align-self: flex-start; flex-wrap: wrap;">
-                    <button class="btn-icon-text ${client.status === 'Completed' ? 'completed' : 'primary'}" onclick="app.toggleClientStatus('${client.id}')" style="${client.status === 'Completed' ? 'background:#F3F4F6; color:#374151;' : ''}">
+                <div style="display:flex; flex-direction:column; gap:8px; align-self: flex-start; min-width: 140px;">
+                    <button class="btn-icon-text ${client.status === 'Completed' ? 'completed' : 'primary'}" onclick="app.toggleClientStatus('${client.id}')" style="justify-content:flex-start; ${client.status === 'Completed' ? 'background:#F3F4F6; color:#374151;' : ''}">
                         <i data-lucide="${client.status === 'Completed' ? 'check-circle' : 'check'}"></i> 
                         ${client.status === 'Completed' ? 'Completed' : 'Mark Complete'}
                     </button>
-                    <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
-                    <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')"><i data-lucide="trash-2"></i> Delete</button>
+                    <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')" style="justify-content:flex-start;"><i data-lucide="edit"></i> Edit</button>
+                    <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')" style="justify-content:flex-start;"><i data-lucide="trash-2"></i> Delete</button>
                 </div>
             </header>
 
