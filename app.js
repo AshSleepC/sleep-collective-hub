@@ -2170,12 +2170,24 @@ const app = {
         form.onsubmit = async (e) => {
             e.preventDefault();
             const notes = document.getElementById('log-modal-notes').value;
-            const date = document.getElementById('log-modal-date').value;
+            const submittedDateStr = document.getElementById('log-modal-date').value;
+
+            let finalIsoString;
+            if (submittedDateStr === dateStr) {
+                // User didn't change the date; use exact moment they hit save
+                finalIsoString = new Date().toISOString();
+            } else {
+                // User manually backdated; safely parse local time for Safari compatibility
+                const [d, t] = submittedDateStr.split('T');
+                const [y, m, day] = d.split('-');
+                const [h, min] = t.split(':');
+                finalIsoString = new Date(y, m - 1, day, h, min).toISOString();
+            }
 
             const inter = {
                 id: 'inter-' + Date.now(),
                 clientId: clientId,
-                date: new Date(date).toISOString(),
+                date: finalIsoString,
                 category: category,
                 notes: notes,
                 isPinned: false
