@@ -1836,7 +1836,7 @@ const app = {
                                             </span>
                                             <span class="text-sm text-muted">${dateStr}</span>
                                         </div>
-                                        <p style="white-space:pre-wrap; margin:0;">${i.notes}</p>
+                                        <p style="white-space:pre-wrap; margin:0; color: var(--text-color);">${i.notes || '<em style="color:var(--text-muted); font-size:0.85rem;">No notes added.</em>'}</p>
                                         <div class="text-right" style="margin-top:12px;">
                                             <button class="btn-icon" onclick="app.togglePinInteraction('${i.id}', '${client.id}')" style="color:var(--text-muted); opacity:0.8; margin-right:12px; padding:4px;" title="Pin Note">
                                                 <i data-lucide="pin" style="width:16px;height:16px; ${i.isPinned ? 'fill:var(--text-muted);' : ''}"></i>
@@ -1922,6 +1922,11 @@ const app = {
 
         document.body.appendChild(modalDiv);
 
+        // Close on backdrop click
+        modalDiv.addEventListener('click', (e) => {
+            if (e.target === modalDiv) this.closeLogModal();
+        });
+
         const form = document.getElementById('log-modal-form');
         const txt = document.getElementById('log-modal-notes');
         
@@ -1967,13 +1972,13 @@ const app = {
             clientId: clientId,
             date: new Date().toISOString(),
             category: category,
-            notes: `${category} completed.`,
+            notes: '',
             isPinned: false
         };
 
         this.interactions.unshift(inter);
         this.renderClientProfile(clientId);
-        this.showToast(`${category} logged!`);
+        this.showToast(`✓ ${category} logged!`);
 
         await db.saveInteraction(inter);
     },
@@ -1989,11 +1994,9 @@ const app = {
         lucide.createIcons();
 
         setTimeout(() => {
-            toast.classList.add('toast-notification', 'fade-out');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }, 2200);
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 350);
+        }, 2500);
     },
 
     editInteraction(id, clientId) {
@@ -2031,6 +2034,11 @@ const app = {
         `;
 
         document.body.appendChild(modalDiv);
+
+        // Close on backdrop click
+        modalDiv.addEventListener('click', (e) => {
+            if (e.target === modalDiv) this.closeLogModal();
+        });
 
         const form = document.getElementById('log-modal-form');
         const txt = document.getElementById('log-modal-notes');

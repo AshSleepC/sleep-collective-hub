@@ -1507,6 +1507,14 @@ input:focus, select:focus, textarea:focus {
   background: var(--secondary-color);
   border-color: var(--secondary-color);
 }
+.btn-log-action:active {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+.btn-log-action.primary:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
 
 /* --- Toast Notifications --- */
 .toast-notification {
