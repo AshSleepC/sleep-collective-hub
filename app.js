@@ -2254,24 +2254,27 @@ const app = {
     },
 
     async deleteInteraction(id, clientId) {
-        if (!confirm("Delete this update?")) return;
-        this.interactions = this.interactions.filter(i => i.id !== id);
-        this.renderClientProfile(clientId);
-        await db.deleteInteraction(id);
+        this.showConfirm("Are you sure you want to delete this update?", async () => {
+            this.interactions = this.interactions.filter(i => i.id !== id);
+            this.renderClientProfile(clientId, false); // don't reset pagination
+            await db.deleteInteraction(id);
+            this.showToast("Update deleted");
+        });
     },
 
     async deleteClient(clientId) {
-        if (!confirm("Are you sure you want to delete this client? This will delete the client and all associated notes/interactions permanently.")) return;
-        
-        this.clients = this.clients.filter(c => c.id !== clientId);
-        this.interactions = this.interactions.filter(i => i.clientId !== clientId);
-        
-        this.populateClientDropdowns();
-        this.renderClientsDashboard();
-        this.updateDashboard();
-        this.switchView('clients');
-        
-        await db.deleteClient(clientId);
+        this.showConfirm("Are you sure you want to delete this client? This will delete the client and all associated notes permanently.", async () => {
+            this.clients = this.clients.filter(c => c.id !== clientId);
+            this.interactions = this.interactions.filter(i => i.clientId !== clientId);
+            
+            this.populateClientDropdowns();
+            this.renderClientsDashboard();
+            this.updateDashboard();
+            this.switchView('clients');
+            
+            await db.deleteClient(clientId);
+            this.showToast("Client deleted");
+        });
     },
 
     async togglePinInteraction(id, clientId) {
