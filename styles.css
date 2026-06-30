@@ -1704,7 +1704,7 @@ input:focus, select:focus, textarea:focus {
   /* Floating back button on mobile */
   .mobile-floating-back {
     position: fixed !important;
-    top: 16px !important;
+    top: max(60px, calc(20px + env(safe-area-inset-top))) !important;
     right: 16px !important;
     z-index: 1000 !important;
     background: var(--surface-color) !important;
