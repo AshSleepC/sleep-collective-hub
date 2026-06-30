@@ -75,6 +75,12 @@ const app = {
     async _initApp() {
         try {
             await db.init();
+            
+            const isHealthy = await db.checkHealth();
+            if (!isHealthy) {
+                alert("⚠️ DATABASE UNREACHABLE OR PAUSED!\n\nYour Supabase database is either paused due to inactivity, or you have lost connection. \n\nPlease go to supabase.com to 'Restore' your project, or check your internet connection.");
+            }
+
             await this.loadData();
         } catch (e) {
             console.error("Init Error:", e);

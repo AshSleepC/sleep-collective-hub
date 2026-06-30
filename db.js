@@ -44,6 +44,22 @@ const db = {
         // Auth session is managed by Supabase SDK — nothing extra needed
     },
 
+    async checkHealth() {
+        try {
+            // Lightweight query to see if the database is awake and responding
+            const { error } = await _supabase.from('settings').select('user_id').limit(1);
+            // PGRST116 means "no rows returned" which is fine (empty table). Anything else is a real error (like 503 Paused).
+            if (error && error.code !== 'PGRST116') {
+                console.error("Supabase Health Check Failed:", error);
+                return false;
+            }
+            return true;
+        } catch (e) {
+            console.error("Supabase Health Check Threw:", e);
+            return false;
+        }
+    },
+
     /* ── Settings ────────────────────────────── */
 
     async getSettings() {
