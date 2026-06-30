@@ -7,6 +7,7 @@ const app = {
     invoices: [],
     invoiceSelection: new Set(),
     timelinePage: 0,
+    _offlineQueue: [],  // Local queue for saves attempted while offline
 
     async init() {
         if (window.location.search.includes('beta=true')) {
@@ -89,6 +90,8 @@ const app = {
             });
         });
 
+        // Initialise offline queue and reconnect listener
+        this._initOfflineSync();
 
         // Initialize icons
         lucide.createIcons();
@@ -115,6 +118,143 @@ const app = {
         if (document.getElementById('setting-provider-details')) document.getElementById('setting-provider-details').value = this.settings.providerDetails || '';
         if (document.getElementById('setting-bank-details')) document.getElementById('setting-bank-details').value = this.settings.bankDetails || '';
         if (document.getElementById('setting-billed-to')) document.getElementById('setting-billed-to').value = this.settings.billedTo || '';
+    },
+
+    // ─── Offline Queue System ────────────────────────────────────────────────
+
+    _initOfflineSync() {
+        // Restore any pending queue from localStorage on startup
+        try {
+            const saved = localStorage.getItem('_sleepHubOfflineQueue');
+            if (saved) {
+                this._offlineQueue = JSON.parse(saved);
+                if (this._offlineQueue.length > 0) {
+                    console.log(`Offline queue restored: ${this._offlineQueue.length} pending item(s).`);
+                    this._updateOfflineBadge();
+                }
+            }
+        } catch (e) { this._offlineQueue = []; }
+
+        // When connection is restored, automatically drain the queue
+        window.addEventListener('online', async () => {
+            if (this._offlineQueue.length > 0) {
+                this.showToast(`✓ Back online — syncing ${this._offlineQueue.length} pending save(s)...`);
+                await this._drainOfflineQueue();
+            }
+        });
+
+        // Update badge on connection loss
+        window.addEventListener('offline', () => {
+            this._showOfflineToast();
+        });
+    },
+
+    _updateOfflineBadge() {
+        let badge = document.getElementById('offline-queue-badge');
+        if (this._offlineQueue.length === 0) {
+            if (badge) badge.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = 'offline-queue-badge';
+            badge.style.cssText = `
+                position: fixed; bottom: 80px; right: 24px;
+                background: #92400E; color: #FDE68A;
+                padding: 8px 16px; border-radius: 24px;
+                font-size: 0.8rem; font-weight: 600;
+                z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                display: flex; align-items: center; gap: 8px;
+                cursor: pointer;
+            `;
+            badge.title = 'You have unsaved changes queued for when you reconnect.';
+            document.body.appendChild(badge);
+        }
+        badge.innerHTML = `⚡ ${this._offlineQueue.length} unsaved — offline`;
+    },
+
+    _showOfflineToast() {
+        const existing = document.querySelector('.toast-notification');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.style.background = '#92400E';
+        toast.innerHTML = `⚠️ You're offline. Changes will be saved when you reconnect.`;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 350); }, 5000);
+    },
+
+    _persistOfflineQueue() {
+        try {
+            localStorage.setItem('_sleepHubOfflineQueue', JSON.stringify(this._offlineQueue));
+        } catch (e) { console.warn('Could not persist offline queue', e); }
+    },
+
+    /**
+     * Tries to save to the cloud. If offline, queues the operation locally.
+     * @param {'interaction'|'record'|'client'|'service'} type
+     * @param {Object} data  The full object to save
+     */
+    async _cloudSave(type, data) {
+        if (!navigator.onLine) {
+            // Remove any existing queue entry for this exact ID to avoid duplicates
+            this._offlineQueue = this._offlineQueue.filter(q => !(q.type === type && q.data.id === data.id));
+            this._offlineQueue.push({ type, data });
+            this._persistOfflineQueue();
+            this._updateOfflineBadge();
+            this._showOfflineToast();
+            return;
+        }
+        try {
+            switch (type) {
+                case 'interaction': await db.saveInteraction(data); break;
+                case 'record':      await db.saveRecord(data);      break;
+                case 'client':      await db.saveClient(data);      break;
+                case 'service':     await db.saveService(data);     break;
+            }
+        } catch (err) {
+            console.error('Cloud save failed, queuing locally:', err);
+            this._offlineQueue = this._offlineQueue.filter(q => !(q.type === type && q.data.id === data.id));
+            this._offlineQueue.push({ type, data });
+            this._persistOfflineQueue();
+            this._updateOfflineBadge();
+        }
+    },
+
+    async _drainOfflineQueue() {
+        if (this._offlineQueue.length === 0) return;
+        const queue = [...this._offlineQueue];
+        this._offlineQueue = [];
+        this._persistOfflineQueue();
+        this._updateOfflineBadge();
+
+        let synced = 0;
+        let failed = 0;
+        for (const item of queue) {
+            try {
+                switch (item.type) {
+                    case 'interaction': await db.saveInteraction(item.data); break;
+                    case 'record':      await db.saveRecord(item.data);      break;
+                    case 'client':      await db.saveClient(item.data);      break;
+                    case 'service':     await db.saveService(item.data);     break;
+                }
+                synced++;
+            } catch (err) {
+                console.error('Failed to drain queue item:', item, err);
+                this._offlineQueue.push(item); // push back on failure
+                failed++;
+            }
+        }
+
+        this._persistOfflineQueue();
+        this._updateOfflineBadge();
+
+        if (synced > 0) {
+            this.showToast(`✓ ${synced} change${synced > 1 ? 's' : ''} synced to cloud!`);
+        }
+        if (failed > 0) {
+            setTimeout(() => this.showToast(`⚠️ ${failed} item(s) failed to sync. Will retry on next reconnect.`), 3500);
+        }
     },
 
     switchView(viewId) {
@@ -394,13 +534,15 @@ const app = {
         this.renderRecordsTable();
         lucide.createIcons();
 
-        // Sync to cloud in background
-        await db.saveRecord(record);
-        // Reload silently to get real ID and confirm sync
-        this.records = await db.getRecords();
-        this.updateDashboard();
-        this.renderRecordsTable();
-        lucide.createIcons();
+        // Sync to cloud (offline-aware)
+        await this._cloudSave('record', record);
+        // If online, reload to confirm sync and get real IDs
+        if (navigator.onLine) {
+            this.records = await db.getRecords();
+            this.updateDashboard();
+            this.renderRecordsTable();
+            lucide.createIcons();
+        }
         this._isSavingRecord = false;
     },
 
@@ -609,7 +751,12 @@ const app = {
 
     buildPeriodCard(title, records, existingInvoice, periodKey, periodStart, periodEnd) {
         const superRate = this.settings.superRate || 12;
-        const uninvoiced = records.filter(r => !r.invoiced);
+        // Filter out zero-dollar records from the uninvoiced list to avoid clutter
+        const uninvoiced = records.filter(r => {
+            if (r.invoiced) return false;
+            const fin = this.getFinancials(r.price, r.feePct, r.discountCode);
+            return fin.netPay > 0;
+        });
         const invoiced   = records.filter(r => r.invoiced);
         const isFullyInvoiced = uninvoiced.length === 0 && existingInvoice;
         const hasUninvoiced = uninvoiced.length > 0;
@@ -1066,7 +1213,9 @@ const app = {
 
     createInvoicePDF(invoice) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l');
+        const doc = new jsPDF('p'); // Portrait
+        const pageW = doc.internal.pageSize.getWidth(); // 210mm
+        const rightCol = pageW - 14; // right margin anchor
 
         // Header
         doc.setFontSize(26);
@@ -1080,38 +1229,48 @@ const app = {
         doc.text(`Date: ${invoice.dateStr}`, 14, 32);
         doc.text(`Invoice #${invoice.id}`, 14, 37);
 
-        // Billed To
+        // Billed To (left)
         doc.setFont("helvetica", "bold");
         doc.setTextColor(34, 34, 34);
         doc.text("BILLED TO:", 14, 50);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(80, 80, 80);
-        const billedToLines = doc.splitTextToSize(invoice.billedTo, 80);
+        const billedToLines = doc.splitTextToSize(invoice.billedTo, 85);
         doc.text(billedToLines, 14, 55);
 
-        // Provider Details
+        // Provider Details (right)
         doc.setFont("helvetica", "bold");
         doc.setTextColor(34, 34, 34);
-        doc.text("FROM:", 200, 50);
+        doc.text("FROM:", pageW / 2 + 5, 50);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(80, 80, 80);
-        const providerLines = doc.splitTextToSize(invoice.providerDetails, 80);
-        doc.text(providerLines, 200, 55);
+        const providerLines = doc.splitTextToSize(invoice.providerDetails, 85);
+        doc.text(providerLines, pageW / 2 + 5, 55);
 
         const startY = Math.max(55 + (billedToLines.length * 5), 55 + (providerLines.length * 5)) + 10;
 
         // Table
         doc.autoTable({
             startY: startY,
-            head: [['Date', 'Client', 'Service', 'Base Price', 'Discount', 'Sub Total', 'Service Fee', 'Gross Pay']],
+            head: [['Date', 'Client', 'Service', 'Base Price', 'Discount', 'Sub Total', 'Svc Fee', 'Gross Pay']],
             body: invoice.tableData,
             theme: 'striped',
             headStyles: { fillColor: [63, 61, 86] },
-            styles: { fontSize: 10, cellPadding: 4 }
+            styles: { fontSize: 8, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 30 },
+                2: { cellWidth: 35 },
+                3: { cellWidth: 20 },
+                4: { cellWidth: 18 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 22 },
+                7: { cellWidth: 22 },
+            }
         });
 
         const finalY = doc.lastAutoTable.finalY + 10;
-        const sumX = 200;
+        const sumX = pageW / 2 + 5;
         
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
@@ -1132,9 +1291,9 @@ const app = {
         doc.setFontSize(12);
         doc.setTextColor(34, 34, 34);
         doc.setFont("helvetica", "bold");
-        doc.text(`Billed Total (Net Pay): ${this.formatCurrency(invoice.summary.totalPay)}`, sumX, finalY + 34);
+        doc.text(`Net Pay (Take-Home): ${this.formatCurrency(invoice.summary.totalPay)}`, sumX, finalY + 34);
 
-        // Bank Details
+        // Bank Details (bottom left)
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.text("PAYMENT DETAILS:", 14, finalY);
@@ -1957,7 +2116,7 @@ const app = {
             this.closeLogModal();
             this.showToast(`${category === '15-Min Call' ? 'Support Call' : 'Client Note'} logged!`);
 
-            await db.saveInteraction(inter);
+            await this._cloudSave('interaction', inter);
         };
     },
 
@@ -1980,7 +2139,7 @@ const app = {
         this.renderClientProfile(clientId);
         this.showToast(`✓ ${category} logged!`);
 
-        await db.saveInteraction(inter);
+        await this._cloudSave('interaction', inter);
     },
 
     showToast(message) {
@@ -2063,7 +2222,7 @@ const app = {
             this.closeLogModal();
             this.showToast("Log entry updated!");
 
-            await db.saveInteraction(inter);
+            await this._cloudSave('interaction', inter);
         };
     },
 
@@ -2101,7 +2260,7 @@ const app = {
         // Optimistic UI update
         this.renderClientProfile(clientId);
         
-        await db.saveInteraction(inter);
+        await this._cloudSave('interaction', inter);
     }
 };
 

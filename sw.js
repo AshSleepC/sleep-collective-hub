@@ -1,5 +1,5 @@
 /* sw.js — Service Worker for PWA offline shell */
-const CACHE = 'sleep-hub-v18';
+const CACHE = 'sleep-hub-v19';
 const SHELL = [
   './index.html',
   './styles.css',
