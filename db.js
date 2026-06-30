@@ -123,20 +123,17 @@ const db = {
     async saveService(service) {
         const user = await this.getUser();
         if (!user) return;
+        if (!service.id) service.id = crypto.randomUUID();
 
         const row = {
+            id:      service.id,
             user_id: user.id,
             name:    service.name,
             price:   service.price,
             fee_pct: service.feePct ?? null,
         };
 
-        if (service.id) {
-            await _supabase.from('services').upsert({ id: service.id, ...row }, { onConflict: 'id' });
-        } else {
-            const { data } = await _supabase.from('services').insert(row).select().single();
-            service.id = data?.id;
-        }
+        await _supabase.from('services').upsert(row, { onConflict: 'id' });
     },
 
     async deleteService(id) {
@@ -174,8 +171,10 @@ const db = {
     async saveRecord(record) {
         const user = await this.getUser();
         if (!user) return;
+        if (!record.id) record.id = crypto.randomUUID();
 
         const row = {
+            id:            record.id,
             user_id:       user.id,
             date:          record.date,
             client:        record.client,
@@ -189,12 +188,7 @@ const db = {
             invoice_date:  record.invoiceDate  ?? null,
         };
 
-        if (record.id) {
-            await _supabase.from('records').upsert({ id: record.id, ...row }, { onConflict: 'id' });
-        } else {
-            const { data } = await _supabase.from('records').insert(row).select().single();
-            record.id = data?.id;
-        }
+        await _supabase.from('records').upsert(row, { onConflict: 'id' });
     },
 
     async deleteRecord(id) {
@@ -289,6 +283,7 @@ const db = {
     async saveClient(client) {
         const user = await this.getUser();
         if (!user) return;
+        if (!client.id) client.id = crypto.randomUUID();
 
         const { data, error } = await _supabase.from('clients').upsert({
             id:           client.id,
@@ -349,6 +344,7 @@ const db = {
     async saveInteraction(interaction) {
         const user = await this.getUser();
         if (!user) return;
+        if (!interaction.id) interaction.id = crypto.randomUUID();
 
         await _supabase.from('interactions').upsert({
             id:        interaction.id,
