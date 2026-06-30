@@ -9,6 +9,16 @@ const app = {
     timelinePage: 0,
     _offlineQueue: [],  // Local queue for saves attempted while offline
 
+    createIcons() {
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            try {
+                lucide.createIcons();
+            } catch (e) {
+                console.warn('Lucide icon error:', e);
+            }
+        }
+    },
+
     async init() {
         // ── Auth state management ──────────────────
         const { data: { session } } = await _supabase.auth.getSession();
@@ -94,7 +104,7 @@ const app = {
         });
 
         // Initialize icons
-        lucide.createIcons();
+        app.createIcons();
     },
 
 
@@ -440,7 +450,7 @@ const app = {
             `;
             tbody.appendChild(tr);
         });
-        lucide.createIcons();
+        app.createIcons();
     },
 
     getServiceName(id) {
@@ -559,7 +569,7 @@ const app = {
         }
         this.updateDashboard();
         this.renderRecordsTable();
-        lucide.createIcons();
+        app.createIcons();
 
         // Sync to cloud (offline-aware)
         await this._cloudSave('record', record);
@@ -568,7 +578,7 @@ const app = {
             this.records = await db.getRecords();
             this.updateDashboard();
             this.renderRecordsTable();
-            lucide.createIcons();
+            app.createIcons();
         }
         this._isSavingRecord = false;
     },
@@ -579,7 +589,7 @@ const app = {
             this.records = this.records.filter(r => r.id !== id);
             this.updateDashboard();
             this.renderRecordsTable();
-            lucide.createIcons();
+            app.createIcons();
             // Sync deletion to cloud
             await db.deleteRecord(id);
         });
@@ -700,7 +710,7 @@ const app = {
             invoicedRecords.forEach(r => renderCard(r, archivedContainer));
         }
 
-        lucide.createIcons();
+        app.createIcons();
     },
 
     // --- Billing Period Invoice Generator ---
@@ -772,7 +782,7 @@ const app = {
             p2Start, p2End
         ));
 
-        lucide.createIcons();
+        app.createIcons();
         this.renderBillingHistory();
     },
 
@@ -975,7 +985,7 @@ const app = {
             `;
             tbody.appendChild(tr);
         });
-        lucide.createIcons();
+        app.createIcons();
     },
 
     downloadPastInvoice(id) {
@@ -1373,7 +1383,7 @@ const app = {
             `;
             tbody.appendChild(tr);
         });
-        lucide.createIcons();
+        app.createIcons();
     },
 
     downloadPastInvoice(id) {
@@ -1948,7 +1958,7 @@ const app = {
             `;
             grid.appendChild(card);
         });
-        lucide.createIcons();
+        app.createIcons();
     },
 
     renderClientProfile(clientId, resetPage = true) {
@@ -2096,7 +2106,7 @@ const app = {
         `;
         container.innerHTML = html;
         
-        lucide.createIcons();
+        app.createIcons();
     },
 
     openLogPopup(category, clientId) {
@@ -2210,7 +2220,7 @@ const app = {
         toast.className = 'toast-notification success';
         toast.innerHTML = `<i data-lucide="check" style="width:16px;height:16px;"></i> ${message}`;
         document.body.appendChild(toast);
-        lucide.createIcons();
+        app.createIcons();
 
         setTimeout(() => {
             toast.classList.add('fade-out');
