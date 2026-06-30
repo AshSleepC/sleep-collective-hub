@@ -207,10 +207,12 @@ const app = {
         }
         try {
             switch (type) {
-                case 'interaction': await db.saveInteraction(data); break;
-                case 'record':      await db.saveRecord(data);      break;
-                case 'client':      await db.saveClient(data);      break;
-                case 'service':     await db.saveService(data);     break;
+                case 'interaction':          await db.saveInteraction(data);             break;
+                case 'record':               await db.saveRecord(data);                 break;
+                case 'client':               await db.saveClient(data);                 break;
+                case 'service':              await db.saveService(data);                break;
+                case 'invoice':              await db.saveInvoice(data);                break;
+                case 'mark-records-invoiced': await db.markRecordsInvoiced(data.recordIds); break;
             }
         } catch (err) {
             console.error('Cloud save failed, queuing locally:', err);
@@ -233,10 +235,12 @@ const app = {
         for (const item of queue) {
             try {
                 switch (item.type) {
-                    case 'interaction': await db.saveInteraction(item.data); break;
-                    case 'record':      await db.saveRecord(item.data);      break;
-                    case 'client':      await db.saveClient(item.data);      break;
-                    case 'service':     await db.saveService(item.data);     break;
+                    case 'interaction':          await db.saveInteraction(item.data);             break;
+                    case 'record':               await db.saveRecord(item.data);                 break;
+                    case 'client':               await db.saveClient(item.data);                 break;
+                    case 'service':              await db.saveService(item.data);                break;
+                    case 'invoice':              await db.saveInvoice(item.data);                break;
+                    case 'mark-records-invoiced': await db.markRecordsInvoiced(item.data.recordIds); break;
                 }
                 synced++;
             } catch (err) {
@@ -904,8 +908,8 @@ const app = {
         };
 
         this.createInvoicePDF(invoiceData);
-        await db.saveInvoice(invoiceData);
-        await db.markRecordsInvoiced(invoiceData.recordIds);
+        await this._cloudSave('invoice', invoiceData);
+        await this._cloudSave('mark-records-invoiced', { recordIds: invoiceData.recordIds });
         await this.loadData();
         this.renderBillingPeriods();
     },
@@ -1195,10 +1199,9 @@ const app = {
         this.renderInvoiceHistoryTable();
         this.switchView('history');
 
-        // 2. Initiate cloud save WITHOUT awaiting
-        db.saveInvoice(invoiceData).then(() => {
-            return db.markRecordsInvoiced(selectedIds);
-        }).catch(err => console.error("Sync error:", err));
+        // 2. Save via offline-resilient queue
+        await this._cloudSave('invoice', invoiceData);
+        await this._cloudSave('mark-records-invoiced', { recordIds: selectedIds });
 
         // 3. Auto-download PDF only on desktop.
         // On iOS PWAs, doc.save() navigates away and can abort the background sync.
