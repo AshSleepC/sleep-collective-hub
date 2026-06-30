@@ -840,6 +840,18 @@ const app = {
         return card;
     },
 
+    // ─── Invoice Generation ────────────────────────────────────────────────
+
+    generateNextInvoiceId() {
+        let nextNum = 34;
+        const sequentialInvoices = this.invoices.filter(i => /^INV\d+$/.test(i.id));
+        if (sequentialInvoices.length > 0) {
+            const maxNum = Math.max(...sequentialInvoices.map(i => parseInt(i.id.replace('INV', ''), 10)));
+            if (maxNum >= nextNum) nextNum = maxNum + 1;
+        }
+        return 'INV' + nextNum.toString().padStart(5, '0');
+    },
+
     async generateBillingPeriodInvoice(periodKey, periodStartISO, periodEndISO) {
         const periodStart = new Date(periodStartISO);
         const periodEnd   = new Date(periodEndISO);
@@ -875,7 +887,7 @@ const app = {
         totalSuper    = totalGrossPay - (totalGrossPay / (1 + superRate / 100));
         totalPay      = totalGrossPay - totalSuper;
 
-        const invoiceId = 'INV-' + Date.now().toString().slice(-6);
+        const invoiceId = this.generateNextInvoiceId();
         const dateStr   = new Date().toLocaleDateString('en-AU');
 
         const invoiceData = {
@@ -1152,7 +1164,7 @@ const app = {
         totalSuper = totalGrossPay * (superRate / 100);
         totalPay = totalGrossPay - totalSuper;
 
-        const invoiceId = 'INV-' + Date.now().toString().slice(-6);
+        const invoiceId = this.generateNextInvoiceId();
         const dateStr = new Date().toLocaleDateString();
 
         const invoiceData = {
