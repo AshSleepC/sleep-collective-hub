@@ -365,6 +365,8 @@ h1, h2, h3, h4 {
 }
 input, select, textarea {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
@@ -372,6 +374,17 @@ input, select, textarea {
   font-size: 1rem;
   transition: border-color 0.2s;
   resize: vertical;
+  text-align: center;
+}
+input:not([type="checkbox"]):not([type="radio"]), select {
+  height: 46px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"], input[type="datetime-local"] {
+  display: block;
+  align-items: center;
+  justify-content: center;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
