@@ -93,6 +93,11 @@ const app = {
         // Initialise offline queue and reconnect listener
         this._initOfflineSync();
 
+        // Initialize Realtime 'Magic Updates' listener
+        db.initRealtime((table, payload) => {
+            this.handleRealtimeEvent(table, payload);
+        });
+
         // Initialize icons
         lucide.createIcons();
     },
@@ -259,6 +264,29 @@ const app = {
         if (failed > 0) {
             setTimeout(() => this.showToast(`⚠️ ${failed} item(s) failed to sync. Will retry on next reconnect.`), 3500);
         }
+    },
+
+    async handleRealtimeEvent(table, payload) {
+        // Debounce to prevent multiple rapid refreshes if many events fire
+        if (this._realtimeTimeout) clearTimeout(this._realtimeTimeout);
+        this._realtimeTimeout = setTimeout(async () => {
+            console.log(`Realtime update received from ${table}`, payload);
+            
+            // Reload all data so arrays stay perfectly in sync
+            await this.loadData();
+            
+            // Redraw the views
+            this.updateDashboard();
+            this.renderClientsDashboard();
+            this.renderRecordsTable();
+            
+            // If viewing a specific client, refresh their profile too
+            const activeProfile = document.querySelector('.client-profile-layout');
+            if (document.getElementById('view-client-profile').classList.contains('active') && activeProfile) {
+                const clientId = activeProfile.getAttribute('data-client-id');
+                this.renderClientProfile(clientId, false);
+            }
+        }, 500);
     },
 
     switchView(viewId) {

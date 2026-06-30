@@ -6,6 +6,20 @@ const db = {
 
     /* ── Auth helpers ─────────────────────────── */
 
+    async checkAuth() {
+        const { data: { session } } = await _supabase.auth.getSession();
+        return session !== null;
+    },
+
+    initRealtime(onPayload) {
+        // Listen to changes on the key tables and pass them back to the app
+        _supabase.channel('public-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, payload => onPayload('clients', payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'interactions' }, payload => onPayload('interactions', payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'records' }, payload => onPayload('records', payload))
+            .subscribe();
+    },
+
     async getUser() {
         const { data: { user } } = await _supabase.auth.getUser();
         return user;
