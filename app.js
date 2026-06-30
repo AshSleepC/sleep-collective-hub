@@ -1707,7 +1707,7 @@ const app = {
                 const timeStr = diffHrs < 24 ? (diffHrs === 0 ? 'Just now' : `${diffHrs}h ago`) : `${Math.floor(diffHrs/24)}d ago`;
                 previewHtml = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span class="badge ${latest.category.toLowerCase()}">${latest.category}</span>
+                        <span class="badge ${latest.category.toLowerCase().replace(/ /g, '-')}">${latest.category}</span>
                         <span class="text-sm text-muted">${timeStr}</span>
                     </div>
                     <p class="text-sm line-clamp-2">${latest.notes}</p>
@@ -1751,20 +1751,43 @@ const app = {
             return new Date(b.date) - new Date(a.date);
         });
 
-        const calls = inters.filter(i => i.category.includes('Call') || i.category.includes('Consult'));
-        const tallyHtml = `<div class="badge" style="background:var(--primary-color);color:white;margin-top:4px;">Calls Logged: ${calls.length}</div>`;
+        const supportCallCount = inters.filter(i => i.category === '15-Min Call').length;
+        const sleepPlanSent = inters.some(i => i.category === 'Sleep Plan Sent');
+        const consultNotesSent = inters.some(i => i.category === 'Consult Notes Sent');
+        const offboardingEmail = inters.some(i => i.category === 'Off Boarding Email Sent');
+        const hourConsult = inters.some(i => i.category === '1 Hour Consult Complete');
+
+        const checklistHtml = `
+            <div class="milestone-checklist">
+                <div class="milestone-item ${supportCallCount > 0 ? 'complete' : ''}">
+                    <i data-lucide="phone" style="width:14px;height:14px;"></i> Support Calls: ${supportCallCount}
+                </div>
+                <div class="milestone-item ${sleepPlanSent ? 'complete' : ''}">
+                    <i data-lucide="${sleepPlanSent ? 'check-circle' : 'circle'}" style="width:14px;height:14px;"></i> Sleep Plan Sent
+                </div>
+                <div class="milestone-item ${consultNotesSent ? 'complete' : ''}">
+                    <i data-lucide="${consultNotesSent ? 'check-circle' : 'circle'}" style="width:14px;height:14px;"></i> Consult Notes Sent
+                </div>
+                <div class="milestone-item ${offboardingEmail ? 'complete' : ''}">
+                    <i data-lucide="${offboardingEmail ? 'check-circle' : 'circle'}" style="width:14px;height:14px;"></i> Off Boarding Email
+                </div>
+                <div class="milestone-item ${hourConsult ? 'complete' : ''}">
+                    <i data-lucide="${hourConsult ? 'check-circle' : 'circle'}" style="width:14px;height:14px;"></i> 1hr Consult Done
+                </div>
+            </div>
+        `;
 
         let html = `
             <header class="view-header flex-between mb-4">
-                <div style="display:flex; align-items:center; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; width: 100%;">
                     <button class="btn-icon" onclick="app.switchView('clients')" style="background:#F3F4F6; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;"><i data-lucide="arrow-left"></i></button>
-                    <div>
+                    <div style="flex:1;">
                         <h1 style="margin:0;">${client.parentName} & ${client.childName}</h1>
                         <p class="text-sm text-muted" style="margin:0;">${client.packageType} • ${client.childAge}</p>
-                        ${tallyHtml}
+                        ${checklistHtml}
                     </div>
                 </div>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px; align-self: flex-start;">
                     <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')"><i data-lucide="edit"></i> Edit</button>
                     <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')"><i data-lucide="trash-2"></i> Delete</button>
                 </div>
@@ -1775,31 +1798,26 @@ const app = {
                     <!-- Quick Add Update -->
                     <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--primary-color);">
                         <h4 style="margin-bottom:12px; font-size:1rem;">Log Update</h4>
-                        <form onsubmit="app.saveInteraction(event, '${client.id}')">
-                            <div class="form-row" style="margin-bottom:12px;">
-                                <div class="form-group" style="margin:0; flex:1;">
-                                    <input type="hidden" id="new-interaction-category" value="15-Min Call">
-                                    <div class="category-pills" id="category-pills-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                        <button type="button" class="badge 15-min-call selected" onclick="app.selectCategory(this, '15-Min Call')">15-Min Call</button>
-                                        <button type="button" class="badge 30-min-consult" onclick="app.selectCategory(this, '30-Min Consult')">30-Min Consult</button>
-                                        <button type="button" class="badge rested-app-support" onclick="app.selectCategory(this, 'Rested App Support')">Rested App Support</button>
-                                        <button type="button" class="badge advice-given" onclick="app.selectCategory(this, 'Advice Given')">Advice Given</button>
-                                        <button type="button" class="badge progress-update" onclick="app.selectCategory(this, 'Progress Update')">Progress Update</button>
-                                        <button type="button" class="badge issue" onclick="app.selectCategory(this, 'Issue')">Issue / Roadblock</button>
-                                    </div>
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <input type="datetime-local" id="new-interaction-date" required style="padding:8px;">
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <textarea id="new-interaction-notes" required rows="3" placeholder="What was discussed or recommended?" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('btn-submit-interaction').click(); }"></textarea>
-                            </div>
-                            <div class="text-right">
-                                <button type="submit" id="btn-submit-interaction" class="btn btn-primary" style="padding:6px 16px;">Log Update</button>
-                                <button type="button" id="btn-cancel-edit-interaction" class="btn btn-secondary hidden" onclick="app.cancelEditInteraction()" style="padding:6px 16px; margin-left:8px;">Cancel</button>
-                            </div>
-                        </form>
+                        <div class="log-action-grid">
+                            <button type="button" class="btn-log-action primary" onclick="app.openLogPopup('15-Min Call', '${client.id}')">
+                                <i data-lucide="phone" style="width:16px;height:16px;"></i> 15 Min Support Call
+                            </button>
+                            <button type="button" class="btn-log-action" onclick="app.logInstant('Sleep Plan Sent', '${client.id}')">
+                                <i data-lucide="send" style="width:16px;height:16px;"></i> Sleep Plan Sent
+                            </button>
+                            <button type="button" class="btn-log-action" onclick="app.logInstant('Consult Notes Sent', '${client.id}')">
+                                <i data-lucide="file-text" style="width:16px;height:16px;"></i> Consult Notes Sent
+                            </button>
+                            <button type="button" class="btn-log-action" onclick="app.logInstant('1 Hour Consult Complete', '${client.id}')">
+                                <i data-lucide="calendar" style="width:16px;height:16px;"></i> 1 Hour Consult Complete
+                            </button>
+                            <button type="button" class="btn-log-action" onclick="app.logInstant('Off Boarding Email Sent', '${client.id}')">
+                                <i data-lucide="mail" style="width:16px;height:16px;"></i> Off Boarding Email Sent
+                            </button>
+                            <button type="button" class="btn-log-action primary" onclick="app.openLogPopup('Client Notes', '${client.id}')">
+                                <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Client Notes
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Timeline -->
@@ -1859,111 +1877,186 @@ const app = {
         `;
         container.innerHTML = html;
         
-        // Default date for new interaction
-        setTimeout(() => {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            const el = document.getElementById('new-interaction-date');
-            if (el) el.value = now.toISOString().slice(0, 16);
-        }, 10);
-
         lucide.createIcons();
     },
 
-    async saveInteraction(e, clientId) {
-        e.preventDefault();
-        
-        let id = null;
-        if (this._editingInteractionId) {
-            id = this._editingInteractionId;
-        } else {
-            id = 'inter-' + Date.now();
+    openLogPopup(category, clientId) {
+        this.closeLogModal();
+
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'log-modal-overlay';
+        modalDiv.id = 'log-modal-overlay';
+
+        let headerText = 'Client Notes';
+        let placeholder = 'Type note content here...';
+        if (category === '15-Min Call') {
+            const inters = this.interactions.filter(i => i.clientId === clientId && i.category === '15-Min Call');
+            const nextCallNum = inters.length + 1;
+            headerText = `Logging Support Call #${nextCallNum}`;
+            placeholder = 'Describe the support call...';
         }
 
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const dateStr = now.toISOString().slice(0, 16);
+
+        modalDiv.innerHTML = `
+            <div class="log-modal-box">
+                <h3 style="margin-top:0; margin-bottom:20px; font-size:1.2rem; color:var(--primary-color);">${headerText}</h3>
+                <form id="log-modal-form">
+                    <div class="form-group">
+                        <label style="font-weight:600; margin-bottom:8px; display:block;">Notes</label>
+                        <textarea id="log-modal-notes" required rows="4" placeholder="${placeholder}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:16px;">
+                        <label style="font-weight:600; margin-bottom:8px; display:block;">Date & Time</label>
+                        <input type="datetime-local" id="log-modal-date" required value="${dateStr}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeLogModal()" style="padding:8px 16px;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Save</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modalDiv);
+
+        const form = document.getElementById('log-modal-form');
+        const txt = document.getElementById('log-modal-notes');
+        
+        txt.focus();
+        txt.onkeydown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const notes = document.getElementById('log-modal-notes').value;
+            const date = document.getElementById('log-modal-date').value;
+
+            const inter = {
+                id: 'inter-' + Date.now(),
+                clientId: clientId,
+                date: new Date(date).toISOString(),
+                category: category,
+                notes: notes,
+                isPinned: false
+            };
+
+            this.interactions.unshift(inter);
+            this.renderClientProfile(clientId);
+            this.closeLogModal();
+            this.showToast(`${category === '15-Min Call' ? 'Support Call' : 'Client Note'} logged!`);
+
+            await db.saveInteraction(inter);
+        };
+    },
+
+    closeLogModal() {
+        const modal = document.getElementById('log-modal-overlay');
+        if (modal) modal.remove();
+    },
+
+    async logInstant(category, clientId) {
         const inter = {
-            id: id,
+            id: 'inter-' + Date.now(),
             clientId: clientId,
-            date: document.getElementById('new-interaction-date').value,
-            category: document.getElementById('new-interaction-category').value,
-            notes: document.getElementById('new-interaction-notes').value,
+            date: new Date().toISOString(),
+            category: category,
+            notes: `${category} completed.`,
             isPinned: false
         };
 
-        if (this._editingInteractionId) {
-            const existing = this.interactions.find(i => i.id === this._editingInteractionId);
-            if (existing) inter.isPinned = existing.isPinned;
-            
-            const idx = this.interactions.findIndex(i => i.id === this._editingInteractionId);
-            if (idx > -1) this.interactions[idx] = inter;
-        } else {
-            this.interactions.unshift(inter);
-        }
-
-        this._editingInteractionId = null;
+        this.interactions.unshift(inter);
         this.renderClientProfile(clientId);
+        this.showToast(`${category} logged!`);
 
         await db.saveInteraction(inter);
+    },
+
+    showToast(message) {
+        const existing = document.querySelector('.toast-notification');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification success';
+        toast.innerHTML = `<i data-lucide="check" style="width:16px;height:16px;"></i> ${message}`;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+
+        setTimeout(() => {
+            toast.classList.add('toast-notification', 'fade-out');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 2200);
     },
 
     editInteraction(id, clientId) {
         const inter = this.interactions.find(i => i.id === id);
         if (!inter) return;
 
-        this._editingInteractionId = id;
-        
-        const dateInput = document.getElementById('new-interaction-date');
-        const categoryInput = document.getElementById('new-interaction-category');
-        const notesInput = document.getElementById('new-interaction-notes');
-        const submitBtn = document.getElementById('btn-submit-interaction');
-        const cancelBtn = document.getElementById('btn-cancel-edit-interaction');
+        this.closeLogModal();
 
-        if (dateInput) {
-            const d = new Date(inter.date);
-            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-            dateInput.value = d.toISOString().slice(0, 16);
-        }
-        if (categoryInput) {
-            categoryInput.value = inter.category;
-            const container = document.getElementById('category-pills-container');
-            if (container) {
-                Array.from(container.children).forEach(b => {
-                    b.classList.remove('selected');
-                    if (b.innerText.trim() === inter.category || (inter.category === 'Issue' && b.innerText.includes('Issue'))) {
-                        b.classList.add('selected');
-                    }
-                });
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'log-modal-overlay';
+        modalDiv.id = 'log-modal-overlay';
+
+        const d = new Date(inter.date);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        const dateStr = d.toISOString().slice(0, 16);
+
+        modalDiv.innerHTML = `
+            <div class="log-modal-box">
+                <h3 style="margin-top:0; margin-bottom:20px; font-size:1.2rem; color:var(--primary-color);">Edit Log: ${inter.category}</h3>
+                <form id="log-modal-form">
+                    <div class="form-group">
+                        <label style="font-weight:600; margin-bottom:8px; display:block;">Notes</label>
+                        <textarea id="log-modal-notes" required rows="4" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">${inter.notes}</textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:16px;">
+                        <label style="font-weight:600; margin-bottom:8px; display:block;">Date & Time</label>
+                        <input type="datetime-local" id="log-modal-date" required value="${dateStr}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeLogModal()" style="padding:8px 16px;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modalDiv);
+
+        const form = document.getElementById('log-modal-form');
+        const txt = document.getElementById('log-modal-notes');
+        
+        txt.focus();
+        txt.onkeydown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.requestSubmit();
             }
-        }
-        if (notesInput) notesInput.value = inter.notes;
-        
-        if (submitBtn) {
-            submitBtn.textContent = 'Update Note';
-            submitBtn.classList.remove('btn-primary');
-            submitBtn.classList.add('btn-secondary');
-            submitBtn.style.background = 'var(--secondary-color)';
-            submitBtn.style.color = '#fff';
-        }
-        if (cancelBtn) cancelBtn.classList.remove('hidden');
+        };
 
-        document.querySelector('.client-profile-layout').scrollIntoView({ behavior: 'smooth' });
-    },
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const notes = document.getElementById('log-modal-notes').value;
+            const date = document.getElementById('log-modal-date').value;
 
-    cancelEditInteraction() {
-        this._editingInteractionId = null;
-        const container = document.querySelector('.client-profile-layout');
-        const clientId = container ? container.dataset.clientId : null;
-        if (clientId) {
-            this.renderClientProfile(clientId, false);
-        }
-    },
+            inter.notes = notes;
+            inter.date = new Date(date).toISOString();
 
-    selectCategory(btnEl, categoryValue) {
-        document.getElementById('new-interaction-category').value = categoryValue;
-        const container = document.getElementById('category-pills-container');
-        if (container) {
-            Array.from(container.children).forEach(b => b.classList.remove('selected'));
-        }
-        btnEl.classList.add('selected');
+            this.renderClientProfile(clientId);
+            this.closeLogModal();
+            this.showToast("Log entry updated!");
+
+            await db.saveInteraction(inter);
+        };
     },
 
     changeTimelinePage(clientId, dir) {

@@ -1431,7 +1431,146 @@ input:focus, select:focus, textarea:focus {
 .timeline-dot.15-min-call, .badge.15-min-call { background: #F3E8FF; color: #6B21A8; } /* Purple */
 .timeline-dot.30-min-consult, .badge.30-min-consult { background: #E2E8F0; color: #1E293B; } /* Navy/Slate */
 .timeline-dot.rested-app-support, .badge.rested-app-support { background: #CCFBF1; color: #0F766E; } /* Teal */
+.timeline-dot.sleep-plan-sent, .badge.sleep-plan-sent { background: #EEF2FF; color: #4F46E5; } /* Indigo */
+.timeline-dot.consult-notes-sent, .badge.consult-notes-sent { background: #E0F2FE; color: #0369A1; } /* Light Blue */
+.timeline-dot.1-hour-consult-complete, .badge.1-hour-consult-complete { background: #ECFDF5; color: #047857; } /* Sage */
+.timeline-dot.off-boarding-email-sent, .badge.off-boarding-email-sent { background: #F1F5F9; color: #475569; } /* Slate */
+.timeline-dot.client-notes, .badge.client-notes { background: #FAFAF9; color: #44403C; } /* Stone */
 
 .pinned-note {
   box-shadow: 0 4px 6px -1px rgba(252, 211, 77, 0.2), 0 2px 4px -1px rgba(252, 211, 77, 0.1);
+}
+
+/* --- Milestone Checklist --- */
+.milestone-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+.milestone-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+.milestone-item.complete {
+  border-color: #D1FAE5;
+  background: #F0FDF4;
+  color: #065F46;
+}
+.milestone-item.complete i {
+  color: #10B981;
+}
+
+/* --- Log Action Grid & Buttons --- */
+.log-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.btn-log-action {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.btn-log-action:hover {
+  border-color: var(--primary-color);
+  background: var(--bg-color);
+  transform: translateY(-1px);
+}
+.btn-log-action.primary {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+}
+.btn-log-action.primary:hover {
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+/* --- Toast Notifications --- */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--primary-color);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toastSlideUp 0.3s ease-out forwards;
+  pointer-events: none;
+}
+.toast-notification.success {
+  background: #065F46;
+}
+.toast-notification.fade-out {
+  animation: toastFadeOut 0.3s ease-out forwards;
+}
+@keyframes toastSlideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes toastFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+/* --- Log Modals --- */
+.log-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logFadeIn 0.2s ease-out forwards;
+}
+.log-modal-box {
+  background: var(--surface-color);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  animation: logScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes logFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes logScaleIn {
+  from { transform: scale(0.96) translateY(8px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
 }
