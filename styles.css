@@ -1652,20 +1652,29 @@ input:focus, select:focus, textarea:focus {
     border-radius: 12px !important;
   }
 
-  /* Log modal (dynamically created): becomes a bottom sheet on mobile */
+  /* Mobile visibility classes */
+  .fab { display: none !important; }
+  .desktop-only { display: none !important; }
+  .mobile-only { display: flex !important; }
+  i.mobile-only { display: inline-block !important; }
+  .mobile-expandable { display: none; margin-top: 16px; }
+  .mobile-expandable.expanded { display: block; }
+
+  /* Log modal: align to top so mobile keyboard doesn't squish it */
   .log-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
+    align-items: flex-start;
+    padding: 16px;
+    padding-top: 10vh;
   }
   .log-modal-box {
     width: 100%;
     max-width: 100%;
-    border-radius: 24px 24px 0 0;
-    padding: 28px 20px max(28px, env(safe-area-inset-bottom));
-    max-height: 85vh;
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    max-height: 70vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: logScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   /* Milestone checklist: smaller pills on mobile */

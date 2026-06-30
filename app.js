@@ -2012,7 +2012,7 @@ const app = {
                         ${checklistHtml}
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:8px; align-self: flex-start; min-width: 140px;">
+                <div class="desktop-only" style="display:flex; flex-direction:column; gap:8px; align-self: flex-start; min-width: 140px;">
                     <button class="btn-icon-text ${client.status === 'Completed' ? 'completed' : 'primary'}" onclick="app.toggleClientStatus('${client.id}')" style="justify-content:flex-start; ${client.status === 'Completed' ? 'background:#F3F4F6; color:#374151;' : ''}">
                         <i data-lucide="${client.status === 'Completed' ? 'check-circle' : 'check'}"></i> 
                         ${client.status === 'Completed' ? 'Completed' : 'Mark Complete'}
@@ -2090,16 +2090,30 @@ const app = {
                             </div>
                         ` : ''}
                     </div>
+
+                    <div class="mobile-only" style="display:none; flex-direction:column; gap:8px; margin-top:24px;">
+                        <button class="btn-icon-text ${client.status === 'Completed' ? 'completed' : 'primary'}" onclick="app.toggleClientStatus('${client.id}')" style="justify-content:center; ${client.status === 'Completed' ? 'background:#F3F4F6; color:#374151;' : ''}">
+                            <i data-lucide="${client.status === 'Completed' ? 'check-circle' : 'check'}"></i> 
+                            ${client.status === 'Completed' ? 'Completed' : 'Mark Complete'}
+                        </button>
+                        <button class="btn-icon-text edit" onclick="app.openClientModal('${client.id}')" style="justify-content:center;"><i data-lucide="edit"></i> Edit</button>
+                        <button class="btn-icon-text delete" onclick="app.deleteClient('${client.id}')" style="justify-content:center; color: var(--danger-color); border-color: var(--danger-color);"><i data-lucide="trash-2"></i> Delete</button>
+                    </div>
                 </div>
 
                 <div class="client-side-col">
                     <div class="card">
-                        <h4 style="margin-bottom:16px;">Package Details</h4>
-                        <p class="text-sm text-muted mb-2"><strong>Started:</strong> ${new Date(client.startDate).toLocaleDateString()}</p>
-                        <p class="text-sm text-muted mb-2"><strong>Ends:</strong> ${new Date(client.endDate).toLocaleDateString()}</p>
-                        <hr style="border:none; border-top:1px solid var(--border-color); margin:16px 0;">
-                        <h4 style="margin-bottom:8px;">Key Goals</h4>
-                        <p class="text-sm" style="white-space:pre-wrap;">${client.keyGoals || 'No goals specified.'}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="document.getElementById('mobile-package-details').classList.toggle('expanded')">
+                            <h4 style="margin:0;">Package Details</h4>
+                            <i data-lucide="chevron-down" class="mobile-only" style="display:none;"></i>
+                        </div>
+                        <div id="mobile-package-details" class="mobile-expandable">
+                            <p class="text-sm text-muted mb-2 mt-3"><strong>Started:</strong> ${new Date(client.startDate).toLocaleDateString()}</p>
+                            <p class="text-sm text-muted mb-2"><strong>Ends:</strong> ${new Date(client.endDate).toLocaleDateString()}</p>
+                            <hr style="border:none; border-top:1px solid var(--border-color); margin:16px 0;">
+                            <h4 style="margin-bottom:8px;">Key Goals</h4>
+                            <p class="text-sm" style="white-space:pre-wrap;">${client.keyGoals || 'No goals specified.'}</p>
+                        </div>
                     </div>
                 </div>
             </div>
