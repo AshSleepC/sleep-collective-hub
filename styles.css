@@ -1149,6 +1149,48 @@ input:focus, select:focus, textarea:focus {
     gap: 0;
   }
 
+  /* iOS-Style Centering for Mobile */
+  .view-header {
+    text-align: center;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: column !important;
+  }
+  .view-header h1, .view-header p {
+    text-align: center;
+    width: 100%;
+  }
+  .view-header > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .card, .stat-card, .client-card, .record-card, .billing-period-card {
+    text-align: center;
+    align-items: center;
+  }
+  .card h3, .card h4, .card h2 {
+    text-align: center;
+  }
+  .card-header, .flex-between {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center;
+  }
+  .milestone-checklist {
+    align-items: center;
+  }
+  label {
+    text-align: center;
+    display: block;
+  }
+  .action-buttons, .log-action-grid, .btn-group {
+    justify-content: center;
+    align-items: center;
+  }
+
   /* Services table: compact card padding */
   #view-services .card {
     padding: 8px;
