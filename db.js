@@ -325,7 +325,8 @@ const db = {
             date:     i.date,
             category: i.category,
             notes:    i.notes,
-            author:   i.author
+            author:   i.author,
+            isPinned: i.is_pinned ?? false
         }));
     },
 
@@ -340,7 +341,8 @@ const db = {
             date:      interaction.date,
             category:  interaction.category,
             notes:     interaction.notes,
-            author:    interaction.author || 'Me'
+            author:    interaction.author || 'Me',
+            is_pinned: interaction.isPinned ?? false
         }, { onConflict: 'id' });
     },
 
