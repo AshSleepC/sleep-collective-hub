@@ -93,6 +93,8 @@ const app = {
 
         // Setup Nav
         document.querySelectorAll('.nav-btn').forEach(btn => {
+            // Skip buttons that use onclick directly (e.g. Admin / More)
+            if (btn.hasAttribute('onclick')) return;
             btn.addEventListener('click', (e) => {
                 const view = e.currentTarget.dataset.view;
                 if (view) this.switchView(view);
