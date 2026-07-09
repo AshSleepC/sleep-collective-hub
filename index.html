@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>The Sleep Collective Hub</title>
+    <title>Sleep Collective Hub v50</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -91,7 +91,7 @@
             </button>
 
             <!-- Mobile only: Admin button opens bottom sheet -->
-            <button class="nav-btn mobile-only" id="nav-btn-admin" data-action="open-admin-menu">
+            <button class="nav-btn mobile-only" id="nav-btn-admin" onclick="document.getElementById('more-menu-overlay').classList.remove('hidden')" data-action="open-admin-menu">
                 <i data-lucide="briefcase"></i> Admin
             </button>
         </nav>
