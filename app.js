@@ -91,15 +91,43 @@ const app = {
             if (loader) loader.classList.add('hidden');
         }
 
-        // Setup Nav
+        // Setup Nav — regular view buttons
         document.querySelectorAll('.nav-btn').forEach(btn => {
-            // Skip buttons that use onclick directly (e.g. Admin / More)
-            if (btn.hasAttribute('onclick')) return;
-            btn.addEventListener('click', (e) => {
-                const view = e.currentTarget.dataset.view;
-                if (view) this.switchView(view);
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                if (view) {
+                    // If inside the admin menu, close it first
+                    if (btn.dataset.closesAdmin) {
+                        document.getElementById('more-menu-overlay').classList.add('hidden');
+                    }
+                    this.switchView(view);
+                }
             });
         });
+
+        // Admin button — open the admin bottom sheet
+        const adminBtn = document.getElementById('nav-btn-admin');
+        if (adminBtn) {
+            adminBtn.addEventListener('click', () => {
+                document.getElementById('more-menu-overlay').classList.remove('hidden');
+            });
+        }
+
+        // Close admin menu via X button
+        const closeAdminBtn = document.getElementById('close-admin-menu-btn');
+        if (closeAdminBtn) {
+            closeAdminBtn.addEventListener('click', () => {
+                document.getElementById('more-menu-overlay').classList.add('hidden');
+            });
+        }
+
+        // Close admin menu by tapping the backdrop
+        const adminOverlay = document.getElementById('more-menu-overlay');
+        if (adminOverlay) {
+            adminOverlay.addEventListener('click', (e) => {
+                if (e.target === adminOverlay) adminOverlay.classList.add('hidden');
+            });
+        }
 
         // Initialise offline queue and reconnect listener
         this._initOfflineSync();
