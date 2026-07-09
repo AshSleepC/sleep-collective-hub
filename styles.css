@@ -1026,12 +1026,11 @@ input:focus, select:focus, textarea:focus {
 
   .nav-menu {
     flex-direction: row;
-    overflow-x: auto;
-    gap: 8px;
+    gap: 0;
     flex: 1;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    margin-right: 12px;
+    overflow: hidden;
+    justify-content: space-around;
+    margin-right: 0;
   }
 
   .nav-menu::-webkit-scrollbar {
@@ -1040,13 +1039,14 @@ input:focus, select:focus, textarea:focus {
 
   .nav-btn {
     flex-direction: column;
-    padding: 8px 12px;
+    padding: 8px 4px;
     white-space: nowrap;
-    scroll-snap-align: start;
-    font-size: 0.7rem;
-    gap: 6px;
+    font-size: 0.65rem;
+    gap: 4px;
     background: transparent !important;
     border-radius: 12px;
+    flex: 1;
+    min-width: 0;
   }
 
   .nav-btn i {
@@ -1064,11 +1064,7 @@ input:focus, select:focus, textarea:focus {
   }
 
   .user-profile {
-    padding-left: 12px;
-    border-left: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    margin-top: 0;
+    display: none;
   }
 
   #sidebar-user-info {
