@@ -72,16 +72,25 @@
             <button class="nav-btn" data-view="records">
                 <i data-lucide="list-todo"></i> Service Records
             </button>
-            
-            <!-- Desktop Layout -->
+
+            <!-- Desktop only: all admin pages shown directly -->
             <button class="nav-btn desktop-only" data-view="invoices">
                 <i data-lucide="file-text"></i> Invoice Generator
             </button>
-            <button class="nav-btn desktop-only" id="nav-btn-more" onclick="app.openModal('more-menu-overlay')">
-                <i data-lucide="more-horizontal"></i> More
+            <button class="nav-btn desktop-only" data-view="history">
+                <i data-lucide="archive"></i> Invoice History
+            </button>
+            <button class="nav-btn desktop-only" data-view="services">
+                <i data-lucide="tags"></i> Services &amp; Prices
+            </button>
+            <button class="nav-btn desktop-only" data-view="tax">
+                <i data-lucide="file-bar-chart-2"></i> Tax Summary
+            </button>
+            <button class="nav-btn desktop-only" data-view="settings">
+                <i data-lucide="settings"></i> Backup &amp; Config
             </button>
 
-            <!-- Mobile Layout -->
+            <!-- Mobile only: Admin button opens bottom sheet -->
             <button class="nav-btn mobile-only" id="nav-btn-admin" onclick="app.openModal('more-menu-overlay')">
                 <i data-lucide="briefcase"></i> Admin
             </button>
