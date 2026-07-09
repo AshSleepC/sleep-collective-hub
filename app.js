@@ -95,9 +95,7 @@ const app = {
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const view = e.currentTarget.dataset.view;
-                this.switchView(view);
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                e.currentTarget.classList.add('active');
+                if (view) this.switchView(view);
             });
         });
 
@@ -309,6 +307,18 @@ const app = {
         if(view) {
             view.classList.remove('hidden');
             view.classList.add('active');
+        }
+
+        // Update nav-btn active states
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            // If it's inside the More menu, also highlight the More button
+            if (activeBtn.closest('#more-menu-overlay')) {
+                const moreBtn = document.getElementById('nav-btn-more');
+                if (moreBtn) moreBtn.classList.add('active');
+            }
         }
 
         if (viewId === 'invoices') {
@@ -2149,13 +2159,15 @@ const app = {
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         const dateStr = now.toISOString().slice(0, 16);
 
+        const reqStr = (category === '15-Min Call' || category === 'Client Notes') ? 'required' : '';
+
         modalDiv.innerHTML = `
             <div class="log-modal-box">
                 <h3 style="margin-top:0; margin-bottom:20px; font-size:1.2rem; color:var(--primary-color);">${headerText}</h3>
                 <form id="log-modal-form">
                     <div class="form-group">
                         <label style="font-weight:600; margin-bottom:8px; display:block;">Notes</label>
-                        <textarea id="log-modal-notes" required rows="4" placeholder="${placeholder}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;"></textarea>
+                        <textarea id="log-modal-notes" ${reqStr} rows="4" placeholder="${placeholder}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;"></textarea>
                     </div>
                     <div class="form-group" style="margin-top:16px;">
                         <label style="font-weight:600; margin-bottom:8px; display:block;">Date & Time</label>
@@ -2280,7 +2292,7 @@ const app = {
                 <form id="log-modal-form">
                     <div class="form-group">
                         <label style="font-weight:600; margin-bottom:8px; display:block;">Notes</label>
-                        <textarea id="log-modal-notes" required rows="4" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">${inter.notes}</textarea>
+                        <textarea id="log-modal-notes" ${(inter.category === '15-Min Call' || inter.category === 'Client Notes') ? 'required' : ''} rows="4" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">${inter.notes || ''}</textarea>
                     </div>
                     <div class="form-group" style="margin-top:16px;">
                         <label style="font-weight:600; margin-bottom:8px; display:block;">Date & Time</label>

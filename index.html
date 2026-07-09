@@ -75,17 +75,8 @@
             <button class="nav-btn" data-view="invoices">
                 <i data-lucide="file-text"></i> Invoice Generator
             </button>
-            <button class="nav-btn" data-view="history">
-                <i data-lucide="archive"></i> Invoice History
-            </button>
-            <button class="nav-btn" data-view="services">
-                <i data-lucide="tags"></i> Services & Prices
-            </button>
-            <button class="nav-btn" data-view="tax">
-                <i data-lucide="file-bar-chart-2"></i> Tax Summaries
-            </button>
-            <button class="nav-btn" data-view="settings">
-                <i data-lucide="settings"></i> Backup & Config
+            <button class="nav-btn" id="nav-btn-more" onclick="app.openModal('more-menu-overlay')">
+                <i data-lucide="more-horizontal"></i> More
             </button>
         </nav>
         
@@ -665,6 +656,29 @@
                     <button type="submit" class="btn btn-primary">Save Client</button>
                 </div>
             </form>
+    </div>
+</div>
+
+<!-- More Menu Bottom Sheet -->
+<div class="modal-overlay hidden" id="more-menu-overlay" onclick="event.target===this&&app.closeModal('more-menu-overlay')">
+    <div class="modal bottom-sheet">
+        <div class="modal-header">
+            <h2>More Options</h2>
+            <button class="btn-icon" onclick="app.closeModal('more-menu-overlay')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="more-menu-list">
+            <button class="nav-btn" data-view="history" onclick="app.closeModal('more-menu-overlay')">
+                <i data-lucide="archive"></i> Invoice History
+            </button>
+            <button class="nav-btn" data-view="services" onclick="app.closeModal('more-menu-overlay')">
+                <i data-lucide="tags"></i> Services & Prices
+            </button>
+            <button class="nav-btn" data-view="tax" onclick="app.closeModal('more-menu-overlay')">
+                <i data-lucide="file-bar-chart-2"></i> Tax Summaries
+            </button>
+            <button class="nav-btn" data-view="settings" onclick="app.closeModal('more-menu-overlay')">
+                <i data-lucide="settings"></i> Backup & Config
+            </button>
         </div>
     </div>
 </div>
