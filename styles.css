@@ -1677,6 +1677,11 @@ input:focus, select:focus, textarea:focus {
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+/* Global visibility classes */
+.mobile-only {
+  display: none !important;
+}
+
 /* =========================================================
    MOBILE-SPECIFIC OVERRIDES (Client Tracker Phase 3)
    ========================================================= */

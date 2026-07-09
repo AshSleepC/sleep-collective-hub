@@ -314,10 +314,12 @@ const app = {
         const activeBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
         if (activeBtn) {
             activeBtn.classList.add('active');
-            // If it's inside the More menu, also highlight the More button
+            // If it's inside the More menu, also highlight the More or Admin button
             if (activeBtn.closest('#more-menu-overlay')) {
                 const moreBtn = document.getElementById('nav-btn-more');
                 if (moreBtn) moreBtn.classList.add('active');
+                const adminBtn = document.getElementById('nav-btn-admin');
+                if (adminBtn) adminBtn.classList.add('active');
             }
         }
 

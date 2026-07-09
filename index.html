@@ -72,7 +72,17 @@
             <button class="nav-btn" data-view="records">
                 <i data-lucide="list-todo"></i> Service Records
             </button>
-            <button class="nav-btn" id="nav-btn-more" onclick="app.openModal('more-menu-overlay')">
+            
+            <!-- Desktop Layout -->
+            <button class="nav-btn desktop-only" data-view="invoices">
+                <i data-lucide="file-text"></i> Invoice Generator
+            </button>
+            <button class="nav-btn desktop-only" id="nav-btn-more" onclick="app.openModal('more-menu-overlay')">
+                <i data-lucide="more-horizontal"></i> More
+            </button>
+
+            <!-- Mobile Layout -->
+            <button class="nav-btn mobile-only" id="nav-btn-admin" onclick="app.openModal('more-menu-overlay')">
                 <i data-lucide="briefcase"></i> Admin
             </button>
         </nav>
@@ -660,11 +670,12 @@
 <div class="modal-overlay hidden" id="more-menu-overlay" onclick="event.target===this&&app.closeModal('more-menu-overlay')">
     <div class="modal bottom-sheet">
         <div class="modal-header">
-            <h2>Admin</h2>
+            <h2 class="desktop-only">More Options</h2>
+            <h2 class="mobile-only">Admin</h2>
             <button class="btn-icon" onclick="app.closeModal('more-menu-overlay')"><i data-lucide="x"></i></button>
         </div>
         <div class="more-menu-list">
-            <button class="nav-btn" data-view="invoices" onclick="app.closeModal('more-menu-overlay')">
+            <button class="nav-btn mobile-only" data-view="invoices" onclick="app.closeModal('more-menu-overlay')">
                 <i data-lucide="file-text"></i> Invoice Generator
             </button>
             <button class="nav-btn" data-view="history" onclick="app.closeModal('more-menu-overlay')">
