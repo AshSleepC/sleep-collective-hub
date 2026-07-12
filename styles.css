@@ -1678,6 +1678,47 @@ input:focus, select:focus, textarea:focus {
   display: none !important;
 }
 
+/* ── Admin Tray (mobile popup above nav bar) ── */
+.admin-tray {
+  display: none;
+  position: fixed;
+  bottom: 70px; /* sits just above the nav bar */
+  left: 12px;
+  right: 12px;
+  background: var(--surface-color);
+  border-radius: 16px;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.18);
+  border: 1px solid var(--border-color);
+  z-index: 9999;
+  flex-direction: column;
+  overflow: hidden;
+  animation: trayUp 0.22s ease-out;
+}
+.admin-tray.open {
+  display: flex;
+}
+@keyframes trayUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.admin-tray-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text-color);
+  text-align: left;
+  width: 100%;
+}
+.admin-tray-item:last-child { border-bottom: none; }
+.admin-tray-item:active { background: var(--bg-color); }
+.admin-tray-item i { width: 20px; height: 20px; color: var(--primary-color); flex-shrink: 0; }
+
 /* =========================================================
    MOBILE-SPECIFIC OVERRIDES (Client Tracker Phase 3)
    ========================================================= */

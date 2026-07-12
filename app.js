@@ -95,37 +95,35 @@ const app = {
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const view = btn.dataset.view;
-                if (view) {
-                    // If inside the admin menu, close it first
-                    if (btn.dataset.closesAdmin) {
-                        document.getElementById('more-menu-overlay').classList.add('hidden');
-                    }
+                if (view && view !== 'admin') {
                     this.switchView(view);
                 }
             });
         });
 
-        // Admin button — open the admin bottom sheet
+        // Admin tray toggle
         const adminBtn = document.getElementById('nav-btn-admin');
-        if (adminBtn) {
-            adminBtn.addEventListener('click', () => {
-                document.getElementById('more-menu-overlay').classList.remove('hidden');
+        const adminTray = document.getElementById('admin-tray');
+        if (adminBtn && adminTray) {
+            adminBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                adminTray.classList.toggle('open');
             });
-        }
-
-        // Close admin menu via X button
-        const closeAdminBtn = document.getElementById('close-admin-menu-btn');
-        if (closeAdminBtn) {
-            closeAdminBtn.addEventListener('click', () => {
-                document.getElementById('more-menu-overlay').classList.add('hidden');
+            // Close tray when a tray item is clicked
+            adminTray.querySelectorAll('.admin-tray-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const view = item.dataset.view;
+                    if (view) {
+                        adminTray.classList.remove('open');
+                        this.switchView(view);
+                    }
+                });
             });
-        }
-
-        // Close admin menu by tapping the backdrop
-        const adminOverlay = document.getElementById('more-menu-overlay');
-        if (adminOverlay) {
-            adminOverlay.addEventListener('click', (e) => {
-                if (e.target === adminOverlay) adminOverlay.classList.add('hidden');
+            // Close tray when tapping anywhere else on the page
+            document.addEventListener('click', (e) => {
+                if (!adminBtn.contains(e.target) && !adminTray.contains(e.target)) {
+                    adminTray.classList.remove('open');
+                }
             });
         }
 

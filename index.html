@@ -90,8 +90,8 @@
                 <i data-lucide="settings"></i> Backup &amp; Config
             </button>
 
-            <!-- Mobile only: Admin button opens bottom sheet -->
-            <button class="nav-btn mobile-only" id="nav-btn-admin" onclick="document.getElementById('more-menu-overlay').classList.remove('hidden')" data-action="open-admin-menu">
+            <!-- Mobile only: Admin button toggles tray above nav -->
+            <button class="nav-btn mobile-only" id="nav-btn-admin" data-view="admin">
                 <i data-lucide="briefcase"></i> Admin
             </button>
         </nav>
@@ -106,6 +106,15 @@
             </div>
         </div>
     </aside>
+
+    <!-- Mobile Admin Tray (sits above bottom nav) -->
+    <div id="admin-tray" class="admin-tray hidden">
+        <button class="admin-tray-item" data-view="invoices"><i data-lucide="file-text"></i><span>Invoice Generator</span></button>
+        <button class="admin-tray-item" data-view="history"><i data-lucide="archive"></i><span>Invoice History</span></button>
+        <button class="admin-tray-item" data-view="services"><i data-lucide="tags"></i><span>Services &amp; Prices</span></button>
+        <button class="admin-tray-item" data-view="tax"><i data-lucide="file-bar-chart-2"></i><span>Tax Summary</span></button>
+        <button class="admin-tray-item" data-view="settings"><i data-lucide="settings"></i><span>Backup &amp; Config</span></button>
+    </div>
 
     <main class="main-content">
         <!-- View Containers -->
