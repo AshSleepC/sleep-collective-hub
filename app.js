@@ -338,17 +338,14 @@ const app = {
         }
 
         // Update nav-btn active states
+        const adminViews = ['invoices', 'history', 'services', 'tax', 'settings'];
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const activeBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-            // If it's inside the More menu, also highlight the More or Admin button
-            if (activeBtn.closest('#more-menu-overlay')) {
-                const moreBtn = document.getElementById('nav-btn-more');
-                if (moreBtn) moreBtn.classList.add('active');
-                const adminBtn = document.getElementById('nav-btn-admin');
-                if (adminBtn) adminBtn.classList.add('active');
-            }
+        if (activeBtn) activeBtn.classList.add('active');
+        // On mobile, highlight the Admin button for any admin sub-page
+        if (adminViews.includes(viewId)) {
+            const adminBtn = document.getElementById('nav-btn-admin');
+            if (adminBtn) adminBtn.classList.add('active');
         }
 
         if (viewId === 'invoices') {
