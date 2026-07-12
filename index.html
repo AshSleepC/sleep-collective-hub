@@ -219,7 +219,7 @@
             </div>
 
             <!-- Active / Uninvoiced Records Section -->
-            <div class="records-section-header">
+            <div class="records-section-header" style="text-align: center;">
                 <h3>Uninvoiced Records</h3>
             </div>
             <div id="records-cards-container" class="records-cards-list mb-4">
@@ -227,7 +227,7 @@
             </div>
 
             <!-- Archived / Invoiced Records Section -->
-            <div class="records-section-header mt-4">
+            <div class="records-section-header mt-4" style="text-align: center;">
                 <h3>Archived / Invoiced Records</h3>
             </div>
             <div id="records-cards-container-archived" class="records-cards-list">
@@ -248,11 +248,11 @@
             
             <div class="card mb-4" style="padding: 1rem;">
                 <div class="flex-between" style="gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-                    <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
-                        <input type="text" id="client-search" placeholder="Search parent or child name..." oninput="app.renderClientsDashboard()">
+                    <div class="form-group" style="margin: 0; flex: 2; min-width: 200px;">
+                        <input type="text" id="client-search" placeholder="Search parent or child name..." oninput="app.renderClientsDashboard()" style="padding: 12px; font-size: 1rem;">
                     </div>
                     <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
-                        <select id="client-filter-status" onchange="app.renderClientsDashboard()">
+                        <select id="client-filter-status" onchange="app.renderClientsDashboard()" style="text-align: center;">
                             <option value="Active">Active Clients</option>
                             <option value="Completed">Completed / Inactive</option>
                             <option value="All">All Clients</option>
