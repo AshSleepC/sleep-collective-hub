@@ -1979,7 +1979,7 @@ const app = {
                 const timeStr = diffHrs < 24 ? (diffHrs === 0 ? 'Just now' : `${diffHrs}h ago`) : `${Math.floor(diffHrs/24)}d ago`;
                 previewHtml = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span class="badge ${latest.category.toLowerCase().replace(/ /g, '-')}">${latest.category}</span>
+                        <span class="badge c-${latest.category.toLowerCase().replace(/ /g, '-')}">${latest.category}</span>
                         <span class="text-sm text-muted">${timeStr}</span>
                     </div>
                     <p class="text-sm line-clamp-2">${latest.notes}</p>
@@ -2107,7 +2107,7 @@ const app = {
                                     <div class="timeline-dot ${i.category.toLowerCase().replace(/ /g, '-')}"></div>
                                     <div class="timeline-content card ${i.isPinned ? 'pinned-note' : ''}" style="${i.isPinned ? 'border: 2px solid #FCD34D; background: #FFFBEB;' : ''}">
                                         <div class="flex-between" style="margin-bottom:8px;">
-                                            <span class="badge ${i.category.toLowerCase().replace(/ /g, '-')}">
+                                            <span class="badge c-${i.category.toLowerCase().replace(/ /g, '-')}">
                                                 ${i.isPinned ? '📌 ' : ''}${i.category}
                                             </span>
                                             <span class="text-sm text-muted">${dateStr}</span>

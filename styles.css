@@ -1598,12 +1598,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Color Variants (Matching Timeline) */
-.btn-log-action.c-15-min-call { background: #F3E8FF; color: #6B21A8; border-color: #E9D5FF; }
-.btn-log-action.c-sleep-plan-sent { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; }
-.btn-log-action.c-consult-notes-sent { background: #E0F2FE; color: #0369A1; border-color: #BAE6FD; }
-.btn-log-action.c-1-hour-consult-complete { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
-.btn-log-action.c-off-boarding-email-sent { background: #F1F5F9; color: #475569; border-color: #CBD5E1; }
-.btn-log-action.c-client-notes { background: #FAFAF9; color: #44403C; border-color: #E7E5E4; }
+.btn-log-action.c-15-min-call, .badge.c-15-min-call { background: #F3E8FF; color: #6B21A8; border-color: #E9D5FF; }
+.btn-log-action.c-sleep-plan-sent, .badge.c-sleep-plan-sent { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; }
+.btn-log-action.c-consult-notes-sent, .badge.c-consult-notes-sent { background: #E0F2FE; color: #0369A1; border-color: #BAE6FD; }
+.btn-log-action.c-1-hour-consult-complete, .badge.c-1-hour-consult-complete { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+.btn-log-action.c-off-boarding-email-sent, .badge.c-off-boarding-email-sent { background: #F1F5F9; color: #475569; border-color: #CBD5E1; }
+.btn-log-action.c-client-notes, .badge.c-client-notes { background: #FAFAF9; color: #44403C; border-color: #E7E5E4; }
 
 /* --- Toast Notifications --- */
 .toast-notification {
