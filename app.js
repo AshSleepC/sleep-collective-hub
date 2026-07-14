@@ -156,7 +156,7 @@ const app = {
         this.populatePackageDropdown();
         // Update Setting Input
         document.getElementById('setting-super-rate').value = this.settings.superRate || 12;
-        if (document.getElementById('setting-fee-rate')) document.getElementById('setting-fee-rate').value = this.settings.feeRate || 30;
+        if (document.getElementById('setting-fee-rate')) document.getElementById('setting-fee-rate').value = this.settings.feeRate ?? 30;
         if (document.getElementById('setting-provider-details')) document.getElementById('setting-provider-details').value = this.settings.providerDetails || '';
         if (document.getElementById('setting-bank-details')) document.getElementById('setting-bank-details').value = this.settings.bankDetails || '';
         if (document.getElementById('setting-billed-to')) document.getElementById('setting-billed-to').value = this.settings.billedTo || '';
@@ -420,7 +420,8 @@ const app = {
         const tbody = document.getElementById('dash-recent-records');
         tbody.innerHTML = '';
         recentUninvoiced.forEach(r => {
-            const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+            const effectiveFee = r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct;
+            const fin = this.getFinancials(r.price, effectiveFee, r.discountCode);
             const childInfo = (r.childName || r.childAge) ? 
                 `<br/><span class="text-muted" style="font-size:0.85em;">Child: ${r.childName || '-'}${r.childAge ? ` (Age: ${r.childAge})` : ''}</span>` : '';
             const tr = document.createElement('tr');
@@ -523,7 +524,7 @@ const app = {
         document.getElementById('record-child-age').value = '';
         document.getElementById('record-service').value = '';
         document.getElementById('record-price').value = '';
-        document.getElementById('record-fee-pct').value = this.settings.feeRate || 30;
+        document.getElementById('record-fee-pct').value = this.settings.feeRate ?? 30;
         if(document.getElementById('record-discount-code')) document.getElementById('record-discount-code').value = '';
         document.getElementById('record-modal-title').innerText = 'Add Record';
 
@@ -539,7 +540,7 @@ const app = {
                 document.getElementById('record-child-age').value = r.childAge || '';
                 document.getElementById('record-service').value = r.serviceId;
                 document.getElementById('record-price').value = r.price;
-                document.getElementById('record-fee-pct').value = r.feePct ?? (this.settings.feeRate || 30);
+                document.getElementById('record-fee-pct').value = r.feePct !== '' && r.feePct != null ? r.feePct : (this.settings.feeRate ?? 30);
                 if(document.getElementById('record-discount-code')) document.getElementById('record-discount-code').value = r.discountCode || '';
                 document.getElementById('record-modal-title').innerText = 'Edit Record';
                 this.calculateRecordPreview();
@@ -554,7 +555,7 @@ const app = {
         const s = this.services.find(srv => srv.id === sId);
         if (s) {
             document.getElementById('record-price').value = s.price;
-            document.getElementById('record-fee-pct').value = s.feePct ?? (this.settings.feeRate || 30);
+            document.getElementById('record-fee-pct').value = s.feePct !== '' && s.feePct != null ? s.feePct : (this.settings.feeRate ?? 30);
             this.calculateRecordPreview();
         }
     },
@@ -720,7 +721,7 @@ const app = {
                     </div>
                     <div class="record-stat-box">
                         <span>Service Fee</span>
-                        <strong>${r.feePct || (this.settings.feeRate || 30)}% (-${this.formatCurrency(fin.feeAmt)})</strong>
+                        <strong>${r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct}% (-${this.formatCurrency(fin.feeAmt)})</strong>
                     </div>
                     <div class="record-stat-box">
                         <span>Agency Gross</span>
@@ -948,7 +949,8 @@ const app = {
         const tableData = [];
 
         selectedRecords.forEach(r => {
-            const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+            const effectiveFee = r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct;
+            const fin = this.getFinancials(r.price, effectiveFee, r.discountCode);
             totalPrice += fin.effectivePrice;
             totalFee   += fin.feeAmt;
             tableData.push([
@@ -958,7 +960,7 @@ const app = {
                 this.formatCurrency(fin.basePrice),
                 fin.discountCodeApplied ? fin.discountCodeApplied.split(' ')[0] : '-',
                 this.formatCurrency(fin.effectivePrice),
-                `${r.feePct || (this.settings.feeRate || 30)}% (-${this.formatCurrency(fin.feeAmt)})`,
+                `${r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct}% (-${this.formatCurrency(fin.feeAmt)})`,
                 this.formatCurrency(fin.grossPay)
             ]);
         });
@@ -1079,7 +1081,7 @@ const app = {
         }
 
         filtered.forEach(r => {
-            const rowFee = r.feePct || (this.settings.feeRate || 30);
+            const rowFee = r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct;
             const fin = this.getFinancials(r.price, rowFee, r.discountCode);
             const isSelected = this.invoiceSelection.has(r.id);
             const serviceName = this.getServiceName(r.serviceId);
@@ -1182,7 +1184,8 @@ const app = {
             const r = this.records.find(rec => rec.id === id);
             if (r) {
                 totalCount++;
-                const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+                const effectiveFee = r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct;
+                const fin = this.getFinancials(r.price, effectiveFee, r.discountCode);
                 totalPrice += fin.effectivePrice;
                 totalFee += fin.feeAmt;
             } else {
@@ -1223,7 +1226,8 @@ const app = {
         const selectedRecords = this.records.filter(r => selectedIds.includes(r.id)).sort((a,b) => new Date(a.date) - new Date(b.date));
 
         selectedRecords.forEach(r => {
-            const fin = this.getFinancials(r.price, r.feePct || (this.settings.feeRate || 30), r.discountCode);
+            const effectiveFee = r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct;
+            const fin = this.getFinancials(r.price, effectiveFee, r.discountCode);
 
             totalPrice += fin.effectivePrice;
             totalFee += fin.feeAmt;
@@ -1235,7 +1239,7 @@ const app = {
                 this.formatCurrency(fin.basePrice),
                 fin.discountCodeApplied ? fin.discountCodeApplied.split(' ')[0] : '-',
                 this.formatCurrency(fin.effectivePrice),
-                `${r.feePct || (this.settings.feeRate || 30)}% (-${this.formatCurrency(fin.feeAmt)})`,
+                `${r.feePct === '' || r.feePct == null ? (this.settings.feeRate ?? 30) : r.feePct}% (-${this.formatCurrency(fin.feeAmt)})`,
                 this.formatCurrency(fin.grossPay)
             ]);
         });
@@ -1648,7 +1652,8 @@ const app = {
     // --- Settings / Backup ---
     async saveSettings() {
         const rate = parseFloat(document.getElementById('setting-super-rate').value) || 12;
-        const feeRate = parseFloat(document.getElementById('setting-fee-rate').value) || 30;
+        let feeRate = parseFloat(document.getElementById('setting-fee-rate').value);
+        if (isNaN(feeRate)) feeRate = 30;
         this.settings.superRate = rate;
         this.settings.feeRate = feeRate;
         
