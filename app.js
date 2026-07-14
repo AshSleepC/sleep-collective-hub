@@ -1039,10 +1039,29 @@ const app = {
     },
 
     async deleteInvoice(id) {
-        this.showConfirm("Are you sure you want to delete this invoice from your history? The underlying service records will NOT be un-invoiced.", async () => {
+        this.showConfirm("Are you sure you want to delete this invoice? The underlying service records will be reset so you can invoice them again.", async () => {
+            const inv = this.invoices.find(i => i.id === id);
+            if (inv && inv.recordIds && inv.recordIds.length > 0) {
+                // Update records in memory
+                const recordsToUpdate = [];
+                for (let r of this.records) {
+                    if (inv.recordIds.includes(r.id)) {
+                        r.invoiced = false;
+                        r.invoiceDate = null;
+                        recordsToUpdate.push(r);
+                        await db.saveRecord(r);
+                    }
+                }
+                // Queue un-invoicing to cloud if online
+                await this._cloudSave('unmark-records-invoiced', { recordIds: inv.recordIds });
+            }
+
             await db.deleteInvoice(id);
             await this.loadData();
-            this.renderBillingPeriods();
+            this.updateDashboard();
+            this.renderRecordsTable();
+            this.renderInvoiceHistoryTable();
+            this.showToast("Invoice deleted and records reset.");
         });
     },
 
@@ -1440,13 +1459,7 @@ const app = {
         }
     },
 
-    async deleteInvoice(id) {
-        this.showConfirm("Are you sure you want to delete this invoice from your history? The underlying service records will NOT be un-invoiced.", async () => {
-            await db.deleteInvoice(id);
-            await this.loadData();
-            this.switchView('history');
-        });
-    },
+
 
     // --- Tax Summaries ---
     getFYString(dateStr) {
