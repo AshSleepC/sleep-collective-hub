@@ -1422,7 +1422,7 @@ const app = {
         doc.setFontSize(9);
         doc.text("Payment due within 14 days of the invoice date.", 14, payY);
 
-        doc.save(`${invoice.id}_${invoice.dateStr.replace(/\//g,'-')}.pdf`);
+        doc.save(`Ashlea Gould ${invoice.id.replace('INV', '#')}.pdf`);
     },
 
     renderInvoiceHistoryTable() {
